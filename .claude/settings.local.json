@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"/Users/admin/Documents/Codevault2/Claude/To do list app/\" && npm create vite@latest . -- --template react 2>&1)",
+      "Bash(cd \"/Users/admin/Documents/Codevault2/Claude/To do list app/\" && npm create vite@latest . -- --template react --force 2>&1)",
+      "Bash(cd \"/Users/admin/Documents/Codevault2/Claude/To do list app/\" && npm init -y 2>&1)",
+      "Bash(cd \"/Users/admin/Documents/Codevault2/Claude/To do list app/\" && npm install vite @vitejs/plugin-react react react-dom react-router-dom @supabase/supabase-js tailwindcss @tailwindcss/vite date-fns recharts lucide-react 2>&1)",
+      "Bash(cd \"/Users/admin/Documents/Codevault2/Claude/To do list app/\" && npm run build 2>&1)",
+      "Bash(cd \"/Users/admin/Documents/Codevault2/Claude/To do list app/\" && npm run dev 2>&1)"
+    ]
+  }
+}
