@@ -9,6 +9,13 @@
     <meta name="apple-mobile-web-app-title" content="DoIt" />
     <title>DoIt — Productivity Tracker</title>
     <link rel="manifest" href="/manifest.json" />
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({ appId: "7adf6af8-2ea0-4869-8a01-e052ea291489" });
+    });
+  </script>
   </head>
   <body>
     <div id="root"></div>
