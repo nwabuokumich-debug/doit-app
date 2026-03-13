@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { format } from 'date-fns'
 import { Trash2, Timer, Pencil, StickyNote } from 'lucide-react'
 import { isLate, isOnTime, earnedPoints } from '../hooks/useTasks'
@@ -11,6 +12,7 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
   const [showNote, setShowNote] = useState(false)
   const [animating, setAnimating] = useState(false)
   const [floatPos, setFloatPos] = useState(null)
+  const containerRef = useRef(null)
 
   const handleToggle = async () => {
     if (animating) return
@@ -18,7 +20,10 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
     if (task.completed) {
       await onUncomplete(task.id)
     } else {
-      setFloatPos(true)
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        setFloatPos({ x: rect.left + 60, y: rect.top + 10 })
+      }
       await onComplete(task.id)
       setTimeout(() => setFloatPos(null), 900)
     }
@@ -33,7 +38,7 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
 
   return (
     <>
-    <div className={`task-enter relative flex items-start gap-3 p-4 rounded-2xl border transition-all ${
+    <div ref={containerRef} className={`task-enter flex items-start gap-3 p-4 rounded-2xl border transition-all ${
       task.completed
         ? 'bg-[#1a1a1a] border-white/5 opacity-60'
         : isOverdue
@@ -135,12 +140,16 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
         onUpdate={onUpdate}
       />
     )}
-    {floatPos && (
-      <div className="float-points absolute left-8 top-2 pointer-events-none z-10">
+    {floatPos && createPortal(
+      <div
+        className="float-points pointer-events-none"
+        style={{ position: 'fixed', left: floatPos.x, top: floatPos.y, zIndex: 9999, transform: 'translateX(-50%)' }}
+      >
         <span className="text-base font-extrabold text-yellow-400 drop-shadow-lg">
           +{task.points + multiplier} pts{multiplier > 0 ? ` (+${multiplier} combo)` : ''}
         </span>
-      </div>
+      </div>,
+      document.body
     )}
     </>
   )
