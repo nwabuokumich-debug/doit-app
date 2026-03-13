@@ -1,8 +1,9 @@
-import { Home, ListTodo, BarChart2, User } from 'lucide-react'
+import { Home, ListTodo, Activity, BarChart2, User } from 'lucide-react'
 
 const TABS = [
   { id: 'today', label: 'Today', icon: Home },
   { id: 'tasks', label: 'Tasks', icon: ListTodo },
+  { id: 'activity', label: 'Activity', icon: Activity },
   { id: 'analytics', label: 'Analytics', icon: BarChart2 },
   { id: 'profile', label: 'Profile', icon: User },
 ]

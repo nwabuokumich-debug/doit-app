@@ -7,6 +7,7 @@ import Today from './pages/Today'
 import AllTasks from './pages/AllTasks'
 import Analytics from './pages/Analytics'
 import Profile from './pages/Profile'
+import ActivityPage from './pages/Activity'
 
 export default function App() {
   const { user, loading: authLoading, signIn, signUp, signOut } = useAuth()
@@ -58,6 +59,8 @@ export default function App() {
             onUpdate={updateTask}
           />
         )
+      case 'activity':
+        return <ActivityPage user={user} />
       case 'analytics':
         return <Analytics tasks={tasks} getDailyScore={getDailyScore} />
       case 'profile':
