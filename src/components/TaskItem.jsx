@@ -33,12 +33,12 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
 
   return (
     <>
-    <div className={`task-enter flex items-start gap-3 p-4 md:p-2.5 rounded-2xl border transition-all ${
+    <div className={`task-enter flex items-start gap-3 p-4 md:p-3 rounded-2xl border transition-all ${
       task.completed
         ? 'bg-[#1a1a1a] border-white/5 opacity-60'
         : isOverdue
         ? 'bg-red-500/5 border-red-500/20'
-        : 'bg-[#1a1a1a] border-white/5'
+        : 'bg-[#1a1a1a] md:bg-[#1e1e1e] border-white/5 md:border-white/10'
     }`}>
       {/* Checkbox */}
       <button
@@ -62,7 +62,7 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full flex-shrink-0 ${level.color}`} />
-          <p className={`text-sm font-medium text-white truncate ${task.completed ? 'line-through text-gray-500' : ''}`}>
+          <p className={`text-sm md:text-base font-medium text-white truncate ${task.completed ? 'line-through text-gray-500' : ''}`}>
             {task.title}
           </p>
         </div>
