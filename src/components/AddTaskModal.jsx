@@ -202,7 +202,7 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
   const [due_date, setDueDate] = useState(initDate)
   const [due_time, setDueTime] = useState(initTime)
   const [showTime, setShowTime] = useState(isEdit && editTask.has_time_deadline)
-  const [priority, setPriority] = useState(isEdit ? editTask.priority : 'medium')
+  const [priority, setPriority] = useState(isEdit ? editTask.priority : 'normal')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -314,7 +314,7 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
           {/* Level */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs text-gray-400">Difficulty</label>
+              <label className="text-xs text-gray-400">Class</label>
               <span className={`text-xs font-semibold ${selected.text}`}>
                 Level {selected.num} — {selected.label} · {selected.points} pts
               </span>

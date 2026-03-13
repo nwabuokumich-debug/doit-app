@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import {
   format, addDays, subDays, isToday, isTomorrow, isYesterday, isBefore, startOfDay,
   startOfWeek, eachDayOfInterval, endOfWeek, isSameDay
@@ -21,12 +21,62 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
   const [showCalendar, setShowCalendar] = useState(false)
   const [view, setView] = useState('tasks') // 'tasks' | 'timeline'
 
+  // Combo multiplier tracking
+  const lastCompletedRef = useRef(null)
+  const lastCompletedTaskRef = useRef(null)
+  const [comboMultiplier, setComboMultiplier] = useState(0)
+
+  const getMultiplierNow = useCallback(() => {
+    if (!lastCompletedRef.current) return 0
+    const mins = (Date.now() - lastCompletedRef.current) / 60000
+    if (mins <= 30) return 7
+    if (mins <= 60) return 4
+    return 0
+  }, [])
+
+  // Decay combo display every 30s as time passes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setComboMultiplier(getMultiplierNow())
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [getMultiplierNow])
+
+  const handleComplete = useCallback(async (taskId) => {
+    const mult = getMultiplierNow()
+    lastCompletedRef.current = Date.now()
+    lastCompletedTaskRef.current = taskId
+    setComboMultiplier(7) // next completion within 30min = +7
+    return onComplete(taskId, mult)
+  }, [getMultiplierNow, onComplete])
+
+  const handleDelete = useCallback(async (taskId) => {
+    if (lastCompletedTaskRef.current === taskId) {
+      lastCompletedRef.current = null
+      lastCompletedTaskRef.current = null
+      setComboMultiplier(0)
+    }
+    return onDelete(taskId)
+  }, [onDelete])
+
   const isPast = isBefore(startOfDay(selectedDate), startOfDay(new Date()))
   const dateStr = format(selectedDate, 'yyyy-MM-dd')
   const dayTasks = getTasksForDate(dateStr)
   const score = getDailyScore(dateStr)
 
   const pct = score.possible > 0 ? Math.round((score.earned / score.possible) * 100) : 0
+  const isPerfect = pct === 100 && score.possible > 0
+
+  const prevEarned = useRef(score.earned)
+  const [scoreAnim, setScoreAnim] = useState(false)
+  useEffect(() => {
+    if (score.earned > prevEarned.current) {
+      setScoreAnim(true)
+      setTimeout(() => setScoreAnim(false), 500)
+    }
+    prevEarned.current = score.earned
+  }, [score.earned])
+
   const sortByPriority = arr => [...arr].sort((a, b) => b.points - a.points)
   const completed = sortByPriority(dayTasks.filter(t => t.completed))
   const pending = sortByPriority(dayTasks.filter(t => !t.completed))
@@ -94,22 +144,61 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
           })}
         </div>
 
+        {/* Combo banner */}
+        {comboMultiplier > 0 && (
+          <div key={comboMultiplier} className="badge-pop mt-3 flex items-center gap-3 px-4 py-3 rounded-2xl bg-[#1a1a1a] border border-orange-500/40 overflow-hidden relative">
+            {/* Glow streak */}
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-yellow-400/5 to-transparent pointer-events-none" />
+            {/* Multiplier */}
+            <div className="flex items-baseline gap-0.5 flex-shrink-0 z-10">
+              <span className="text-3xl font-black text-orange-400 leading-none">+{comboMultiplier}</span>
+            </div>
+            {/* Divider */}
+            <div className="w-px h-8 bg-orange-500/30 flex-shrink-0 z-10" />
+            {/* Labels */}
+            <div className="flex flex-col z-10">
+              <span className="text-xs font-black text-orange-300 tracking-widest uppercase leading-tight">Combo Active</span>
+              <span className="text-[10px] text-gray-500 mt-0.5">Keep completing tasks!</span>
+            </div>
+            {/* Flame */}
+            <span className="ml-auto text-2xl z-10">🔥</span>
+          </div>
+        )}
+
         {/* Score bar — compact */}
-        <div className="mt-3 bg-gradient-to-br from-indigo-500/20 to-purple-500/10 rounded-xl px-4 py-2.5 border border-indigo-500/20">
+        <div className={`mt-3 rounded-xl px-4 py-2.5 border transition-all duration-500 ${
+          isPerfect
+            ? 'bg-gradient-to-br from-yellow-500/20 to-amber-500/10 border-yellow-500/30 perfect-pulse'
+            : 'bg-gradient-to-br from-indigo-500/20 to-purple-500/10 border-indigo-500/20'
+        }`}>
           <div className="flex items-center gap-3">
             <div className="flex items-baseline gap-1 flex-shrink-0">
-              <span className="text-xl font-bold text-white">{score.earned}</span>
+              <span className={`text-xl font-bold text-white ${scoreAnim ? 'score-pop' : ''}`}>
+                {score.earned}
+              </span>
               <span className="text-gray-500 text-xs">/ {score.possible}</span>
             </div>
             <div className="flex-1 h-1.5 bg-black/30 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
+                className={`h-full rounded-full transition-all duration-500 ${
+                  isPerfect
+                    ? 'bg-gradient-to-r from-yellow-400 to-amber-500'
+                    : 'bg-gradient-to-r from-indigo-500 to-purple-500'
+                }`}
                 style={{ width: `${pct}%` }}
               />
             </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Zap size={12} className="text-yellow-400" />
-              <span className="text-sm font-bold text-yellow-400">{pct}%</span>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {isPerfect ? (
+                <span className="badge-pop text-xs font-extrabold px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-300 tracking-wide">
+                  PERFECT
+                </span>
+              ) : (
+                <>
+                  <Zap size={12} className="text-yellow-400" />
+                  <span className="text-sm font-bold text-yellow-400">{pct}%</span>
+                </>
+              )}
             </div>
           </div>
           <div className="flex justify-between text-[10px] text-gray-600 mt-1">
@@ -164,7 +253,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
         {pending.length > 0 && (
           <div className="space-y-2">
             {pending.map(task => (
-              <TaskItem key={task.id} task={task} onComplete={onComplete} onUncomplete={onUncomplete} onDelete={onDelete} onUpdate={onUpdate} />
+              <TaskItem key={task.id} task={task} onComplete={handleComplete} onUncomplete={onUncomplete} onDelete={handleDelete} onUpdate={onUpdate} multiplier={comboMultiplier} />
             ))}
           </div>
         )}
@@ -174,7 +263,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
             <p className="text-xs text-gray-600 uppercase tracking-widest mb-2 px-1">Completed</p>
             <div className="space-y-2">
               {completed.map(task => (
-                <TaskItem key={task.id} task={task} onComplete={onComplete} onUncomplete={onUncomplete} onDelete={onDelete} onUpdate={onUpdate} />
+                <TaskItem key={task.id} task={task} onComplete={handleComplete} onUncomplete={onUncomplete} onDelete={handleDelete} onUpdate={onUpdate} multiplier={1} />
               ))}
             </div>
           </div>

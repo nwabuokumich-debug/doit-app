@@ -18,7 +18,7 @@ export function isOnTime(task) {
 export function earnedPoints(task) {
   if (!task.completed) return 0
   const level = getLevel(task.priority)
-  let pts = task.points
+  let pts = task.points + (task.bonus_points || 0)
   if (isOnTime(task)) pts += level.timeBonus
   if (isLate(task))   pts += level.timePenalty
   return Math.max(0, pts)
@@ -88,20 +88,21 @@ export function useTasks(user) {
     return { error: null }
   }
 
-  const completeTask = async (taskId) => {
+  const completeTask = async (taskId, multiplier = 1) => {
     const now = new Date().toISOString()
+    const task = tasks.find(t => t.id === taskId)
+    const bonusPoints = multiplier
     // Optimistic
     setTasks(prev => prev.map(t =>
-      t.id === taskId ? { ...t, completed: true, completed_at: now } : t
+      t.id === taskId ? { ...t, completed: true, completed_at: now, bonus_points: bonusPoints } : t
     ))
     const { error } = await supabase
       .from('tasks')
-      .update({ completed: true, completed_at: now })
+      .update({ completed: true, completed_at: now, bonus_points: bonusPoints })
       .eq('id', taskId)
     if (error) {
-      // Revert
       setTasks(prev => prev.map(t =>
-        t.id === taskId ? { ...t, completed: false, completed_at: null } : t
+        t.id === taskId ? { ...t, completed: false, completed_at: null, bonus_points: 0 } : t
       ))
     }
     return { error }
@@ -110,13 +111,13 @@ export function useTasks(user) {
   const uncompleteTask = async (taskId) => {
     // Optimistic
     setTasks(prev => prev.map(t =>
-      t.id === taskId ? { ...t, completed: false, completed_at: null } : t
+      t.id === taskId ? { ...t, completed: false, completed_at: null, bonus_points: 0 } : t
     ))
     const { error } = await supabase
       .from('tasks')
-      .update({ completed: false, completed_at: null })
+      .update({ completed: false, completed_at: null, bonus_points: 0 })
       .eq('id', taskId)
-    if (error) fetchTasks() // revert by refetching
+    if (error) fetchTasks()
     return { error }
   }
 
