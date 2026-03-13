@@ -194,13 +194,13 @@ export default function Timeline({ tasks, selectedDate, onUpdate }) {
 
 function getColorHex(priority) {
   const map = {
-    trivial: '#94a3b8',
-    easy:    '#22c55e',
-    simple:  '#14b8a6',
-    medium:  '#eab308',
-    hard:    '#f97316',
-    tough:   '#ef4444',
-    epic:    '#a855f7',
+    light:    '#94a3b8',
+    basic:    '#22c55e',
+    normal:   '#14b8a6',
+    solid:    '#eab308',
+    major:    '#f97316',
+    grand:    '#ef4444',
+    epic:     '#a855f7',
   }
-  return map[priority] ?? '#6366f1'
+  return map[priority] ?? '#94a3b8'
 }
