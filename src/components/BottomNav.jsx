@@ -31,9 +31,9 @@ export default function BottomNav({ active, onChange }) {
             left: `calc(${activeIndex * (100 / TABS.length)}% + 2px)`,
             top: '50%',
             transform: 'translateY(-50%)',
-            background: 'linear-gradient(to bottom, rgba(255,255,255,0.14), rgba(255,255,255,0.06))',
-            border: '0.5px solid rgba(255, 255, 255, 0.15)',
-            boxShadow: '0 2px 12px rgba(0, 0, 0, 0.15), inset 0 0.5px 0 rgba(255, 255, 255, 0.12)',
+            background: 'linear-gradient(to bottom, rgba(99,102,241,0.35), rgba(99,102,241,0.15))',
+            border: '0.5px solid rgba(129,140,248,0.3)',
+            boxShadow: '0 2px 12px rgba(99,102,241,0.2), inset 0 0.5px 0 rgba(165,180,252,0.2)',
           }}
         />
 
@@ -48,10 +48,10 @@ export default function BottomNav({ active, onChange }) {
               <Icon
                 size={21}
                 strokeWidth={isActive ? 2.2 : 1.5}
-                className={`transition-colors duration-200 ${isActive ? 'text-white' : 'text-[#666]'}`}
+                className={`transition-colors duration-200 ${isActive ? 'text-indigo-300' : 'text-[#666]'}`}
               />
               <span
-                className={`text-[9px] font-medium transition-colors duration-200 ${isActive ? 'text-white' : 'text-[#555]'}`}
+                className={`text-[9px] font-medium transition-colors duration-200 ${isActive ? 'text-indigo-300' : 'text-[#555]'}`}
               >
                 {label}
               </span>
