@@ -9,23 +9,56 @@ const TABS = [
 ]
 
 export default function BottomNav({ active, onChange }) {
+  const activeIndex = TABS.findIndex(t => t.id === active)
+
   return (
-    <nav className="flex items-center border-t border-white/5 bg-[#0f0f0f] px-2 pb-safe">
-      {TABS.map(({ id, label, icon: Icon }) => {
-        const isActive = active === id
-        return (
-          <button
-            key={id}
-            onClick={() => onChange(id)}
-            className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors ${
-              isActive ? 'text-indigo-400' : 'text-gray-600 hover:text-gray-400'
-            }`}
-          >
-            <Icon size={22} strokeWidth={isActive ? 2.5 : 1.5} />
-            <span className="text-[10px] font-medium">{label}</span>
-          </button>
-        )
-      })}
-    </nav>
+    <div className="px-4 pb-3 pt-1" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+      <nav
+        className="relative flex items-center h-[58px] rounded-[26px] px-1"
+        style={{
+          background: 'rgba(30, 30, 30, 0.65)',
+          backdropFilter: 'blur(40px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+          border: '0.5px solid rgba(255, 255, 255, 0.12)',
+          boxShadow: '0 8px 40px rgba(0, 0, 0, 0.35), inset 0 0.5px 0 rgba(255, 255, 255, 0.08)',
+        }}
+      >
+        {/* Sliding glass pill */}
+        <div
+          className="absolute h-[42px] rounded-[20px] transition-all duration-300 ease-out"
+          style={{
+            width: `calc(${100 / TABS.length}% - 4px)`,
+            left: `calc(${activeIndex * (100 / TABS.length)}% + 2px)`,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            background: 'linear-gradient(to bottom, rgba(255,255,255,0.14), rgba(255,255,255,0.06))',
+            border: '0.5px solid rgba(255, 255, 255, 0.15)',
+            boxShadow: '0 2px 12px rgba(0, 0, 0, 0.15), inset 0 0.5px 0 rgba(255, 255, 255, 0.12)',
+          }}
+        />
+
+        {TABS.map(({ id, label, icon: Icon }) => {
+          const isActive = active === id
+          return (
+            <button
+              key={id}
+              onClick={() => onChange(id)}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 relative z-10 py-2"
+            >
+              <Icon
+                size={21}
+                strokeWidth={isActive ? 2.2 : 1.5}
+                className={`transition-colors duration-200 ${isActive ? 'text-white' : 'text-[#666]'}`}
+              />
+              <span
+                className={`text-[9px] font-medium transition-colors duration-200 ${isActive ? 'text-white' : 'text-[#555]'}`}
+              >
+                {label}
+              </span>
+            </button>
+          )
+        })}
+      </nav>
+    </div>
   )
 }
