@@ -1,5 +1,4 @@
-import { useState, useRef } from 'react'
-import { createPortal } from 'react-dom'
+import { useState } from 'react'
 import { format } from 'date-fns'
 import { Trash2, Timer, Pencil, StickyNote } from 'lucide-react'
 import { isLate, isOnTime, earnedPoints } from '../hooks/useTasks'
@@ -11,8 +10,7 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
   const [showEdit, setShowEdit] = useState(false)
   const [showNote, setShowNote] = useState(false)
   const [animating, setAnimating] = useState(false)
-  const [floatPos, setFloatPos] = useState(null)
-  const containerRef = useRef(null)
+  const [showFloat, setShowFloat] = useState(false)
 
   const handleToggle = async () => {
     if (animating) return
@@ -20,12 +18,9 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
     if (task.completed) {
       await onUncomplete(task.id)
     } else {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        setFloatPos({ x: rect.left + 60, y: rect.top + 10 })
-      }
+      setShowFloat(true)
       await onComplete(task.id)
-      setTimeout(() => setFloatPos(null), 900)
+      setTimeout(() => setShowFloat(false), 900)
     }
     setTimeout(() => setAnimating(false), 400)
   }
@@ -38,7 +33,7 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
 
   return (
     <>
-    <div ref={containerRef} className={`task-enter flex items-start gap-3 p-4 md:p-2.5 rounded-2xl border transition-all ${
+    <div className={`task-enter flex items-start gap-3 p-4 md:p-2.5 rounded-2xl border transition-all ${
       task.completed
         ? 'bg-[#1a1a1a] border-white/5 opacity-60'
         : isOverdue
@@ -140,16 +135,12 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
         onUpdate={onUpdate}
       />
     )}
-    {floatPos && createPortal(
-      <div
-        className="float-points pointer-events-none"
-        style={{ position: 'fixed', left: floatPos.x, top: floatPos.y, zIndex: 9999, transform: 'translateX(-50%)' }}
-      >
-        <span className="text-base font-extrabold text-yellow-400 drop-shadow-lg">
+    {showFloat && (
+      <div className="float-points pointer-events-none fixed left-1/2 top-1/3 -translate-x-1/2 z-[9999]">
+        <span className="text-lg font-extrabold text-yellow-400 drop-shadow-lg">
           +{task.points + multiplier} pts{multiplier > 0 ? ` (+${multiplier} combo)` : ''}
         </span>
-      </div>,
-      document.body
+      </div>
     )}
     </>
   )

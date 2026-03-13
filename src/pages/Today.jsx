@@ -42,6 +42,17 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
     return () => clearInterval(interval)
   }, [getMultiplierNow])
 
+  // Reset combo if last completed task was deleted remotely
+  useEffect(() => {
+    if (!lastCompletedTaskRef.current) return
+    const stillExists = dayTasks.some(t => t.id === lastCompletedTaskRef.current)
+    if (!stillExists) {
+      lastCompletedRef.current = null
+      lastCompletedTaskRef.current = null
+      setComboMultiplier(0)
+    }
+  }, [dayTasks])
+
   const handleComplete = useCallback(async (taskId) => {
     const mult = getMultiplierNow()
     lastCompletedRef.current = Date.now()
