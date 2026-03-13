@@ -50,6 +50,15 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
     return onComplete(taskId, mult)
   }, [getMultiplierNow, onComplete])
 
+  const handleUncomplete = useCallback(async (taskId) => {
+    if (lastCompletedTaskRef.current === taskId) {
+      lastCompletedRef.current = null
+      lastCompletedTaskRef.current = null
+      setComboMultiplier(0)
+    }
+    return onUncomplete(taskId)
+  }, [onUncomplete])
+
   const handleDelete = useCallback(async (taskId) => {
     if (lastCompletedTaskRef.current === taskId) {
       lastCompletedRef.current = null
@@ -253,7 +262,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
         {pending.length > 0 && (
           <div className="space-y-2">
             {pending.map(task => (
-              <TaskItem key={task.id} task={task} onComplete={handleComplete} onUncomplete={onUncomplete} onDelete={handleDelete} onUpdate={onUpdate} multiplier={comboMultiplier} />
+              <TaskItem key={task.id} task={task} onComplete={handleComplete} onUncomplete={handleUncomplete} onDelete={handleDelete} onUpdate={onUpdate} multiplier={comboMultiplier} />
             ))}
           </div>
         )}
@@ -263,7 +272,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
             <p className="text-xs text-gray-600 uppercase tracking-widest mb-2 px-1">Completed</p>
             <div className="space-y-2">
               {completed.map(task => (
-                <TaskItem key={task.id} task={task} onComplete={handleComplete} onUncomplete={onUncomplete} onDelete={handleDelete} onUpdate={onUpdate} multiplier={1} />
+                <TaskItem key={task.id} task={task} onComplete={handleComplete} onUncomplete={handleUncomplete} onDelete={handleDelete} onUpdate={onUpdate} multiplier={1} />
               ))}
             </div>
           </div>

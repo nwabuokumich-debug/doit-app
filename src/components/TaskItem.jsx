@@ -1,5 +1,4 @@
-import { useState, useRef } from 'react'
-import { createPortal } from 'react-dom'
+import { useState } from 'react'
 import { format } from 'date-fns'
 import { Trash2, Timer, Pencil, StickyNote } from 'lucide-react'
 import { isLate, isOnTime, earnedPoints } from '../hooks/useTasks'
@@ -12,7 +11,6 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
   const [showNote, setShowNote] = useState(false)
   const [animating, setAnimating] = useState(false)
   const [floatPos, setFloatPos] = useState(null)
-  const checkboxRef = useRef(null)
 
   const handleToggle = async () => {
     if (animating) return
@@ -20,10 +18,7 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
     if (task.completed) {
       await onUncomplete(task.id)
     } else {
-      if (checkboxRef.current) {
-        const rect = checkboxRef.current.getBoundingClientRect()
-        setFloatPos({ x: rect.left + rect.width / 2, y: rect.top })
-      }
+      setFloatPos(true)
       await onComplete(task.id)
       setTimeout(() => setFloatPos(null), 900)
     }
@@ -38,7 +33,7 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
 
   return (
     <>
-    <div className={`task-enter flex items-start gap-3 p-4 rounded-2xl border transition-all ${
+    <div className={`task-enter relative flex items-start gap-3 p-4 rounded-2xl border transition-all ${
       task.completed
         ? 'bg-[#1a1a1a] border-white/5 opacity-60'
         : isOverdue
@@ -47,7 +42,6 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
     }`}>
       {/* Checkbox */}
       <button
-        ref={checkboxRef}
         onClick={handleToggle}
         className={`mt-0.5 w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${
           animating ? 'pop-anim' : ''
@@ -141,16 +135,12 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
         onUpdate={onUpdate}
       />
     )}
-    {floatPos && createPortal(
-      <div
-        className="float-points fixed pointer-events-none z-[9999]"
-        style={{ left: floatPos.x, top: floatPos.y, transform: 'translateX(-50%)' }}
-      >
+    {floatPos && (
+      <div className="float-points absolute left-8 top-2 pointer-events-none z-10">
         <span className="text-base font-extrabold text-yellow-400 drop-shadow-lg">
           +{task.points + multiplier} pts{multiplier > 0 ? ` (+${multiplier} combo)` : ''}
         </span>
-      </div>,
-      document.body
+      </div>
     )}
     </>
   )
