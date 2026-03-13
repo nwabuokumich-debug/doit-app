@@ -84,8 +84,8 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
         )}
       </div>
 
-      {/* Points badge */}
-      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+      {/* Points + actions */}
+      <div className="flex flex-col md:flex-row items-end md:items-center gap-2 flex-shrink-0">
         <div className="flex flex-col items-end">
           {(late || onTime) ? (
             <>
@@ -104,19 +104,21 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
             </span>
           )}
         </div>
-        {!task.completed && (
-          <button onClick={() => setShowEdit(true)} className="text-gray-600 hover:text-indigo-400 transition-colors">
-            <Pencil size={14} />
+        <div className="flex flex-col md:flex-row gap-2">
+          {!task.completed && (
+            <button onClick={() => setShowEdit(true)} className="text-gray-600 hover:text-indigo-400 transition-colors">
+              <Pencil size={14} />
+            </button>
+          )}
+          {task.completed && (
+            <button onClick={() => setShowNote(true)} className={`transition-colors ${task.description ? 'text-indigo-400' : 'text-gray-600 hover:text-indigo-400'}`}>
+              <StickyNote size={14} />
+            </button>
+          )}
+          <button onClick={() => onDelete(task.id)} className="text-gray-600 hover:text-red-400 transition-colors">
+            <Trash2 size={14} />
           </button>
-        )}
-        {task.completed && (
-          <button onClick={() => setShowNote(true)} className={`transition-colors ${task.description ? 'text-indigo-400' : 'text-gray-600 hover:text-indigo-400'}`}>
-            <StickyNote size={14} />
-          </button>
-        )}
-        <button onClick={() => onDelete(task.id)} className="text-gray-600 hover:text-red-400 transition-colors">
-          <Trash2 size={14} />
-        </button>
+        </div>
       </div>
     </div>
 
