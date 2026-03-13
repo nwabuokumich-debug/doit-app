@@ -97,7 +97,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
   return (
     <div className="flex flex-col h-full relative">
       {/* Header */}
-      <div className="px-5 pt-4 pb-2">
+      <div className="px-5 pt-4 pb-2 md:pt-2 md:pb-1">
         <div className="flex items-center justify-between mb-1">
           <p className="text-xs text-gray-500 uppercase tracking-widest">{format(selectedDate, 'MMMM yyyy')}</p>
           <button onClick={() => setShowCalendar(true)} className="text-gray-400 hover:text-white transition-colors">
@@ -117,7 +117,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
         </div>
 
         {/* Week strip — slim pills */}
-        <div className="flex gap-1 mt-2">
+        <div className="flex gap-1 mt-2 md:mt-1">
           {weekDays.map(day => {
             const isSelected = isSameDay(day, selectedDate)
             const todayFlag = isToday(day)
@@ -155,12 +155,12 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
 
         {/* Combo banner */}
         {comboMultiplier > 0 && (
-          <div key={comboMultiplier} className="badge-pop mt-3 flex items-center gap-3 px-4 py-3 rounded-2xl bg-[#1a1a1a] border border-orange-500/40 overflow-hidden relative">
+          <div key={comboMultiplier} className="badge-pop mt-3 md:mt-1.5 flex items-center gap-3 px-4 py-3 md:py-1.5 rounded-2xl bg-[#1a1a1a] border border-orange-500/40 overflow-hidden relative">
             {/* Glow streak */}
             <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-yellow-400/5 to-transparent pointer-events-none" />
             {/* Multiplier */}
             <div className="flex items-baseline gap-0.5 flex-shrink-0 z-10">
-              <span className="text-3xl font-black text-orange-400 leading-none">+{comboMultiplier}</span>
+              <span className="text-3xl md:text-xl font-black text-orange-400 leading-none">+{comboMultiplier}</span>
             </div>
             {/* Divider */}
             <div className="w-px h-8 bg-orange-500/30 flex-shrink-0 z-10" />
@@ -175,7 +175,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
         )}
 
         {/* Score bar — compact */}
-        <div className={`mt-3 rounded-xl px-4 py-2.5 border transition-all duration-500 ${
+        <div className={`mt-3 md:mt-1.5 rounded-xl px-4 py-2.5 md:py-1.5 border transition-all duration-500 ${
           isPerfect
             ? 'bg-gradient-to-br from-yellow-500/20 to-amber-500/10 border-yellow-500/30 perfect-pulse'
             : 'bg-gradient-to-br from-indigo-500/20 to-purple-500/10 border-indigo-500/20'
@@ -217,10 +217,10 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
         </div>
 
         {/* View toggle */}
-        <div className="flex gap-1 mt-3 bg-[#141414] rounded-xl p-1">
+        <div className="flex gap-1 mt-3 md:mt-1.5 bg-[#141414] rounded-xl p-1">
           <button
             onClick={() => setView('tasks')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 md:py-1 rounded-lg text-xs font-semibold transition-all ${
               view === 'tasks' ? 'bg-[#1a1a1a] text-white' : 'text-gray-600'
             }`}
           >
@@ -228,7 +228,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
           </button>
           <button
             onClick={() => setView('timeline')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 md:py-1 rounded-lg text-xs font-semibold transition-all ${
               view === 'timeline' ? 'bg-[#1a1a1a] text-white' : 'text-gray-600'
             }`}
           >
