@@ -43,6 +43,32 @@ export function useTasks(user) {
     fetchTasks()
   }, [fetchTasks])
 
+  // Real-time sync — listen for changes from other devices
+  useEffect(() => {
+    if (!user) return
+    const channel = supabase
+      .channel('tasks-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'tasks',
+        filter: `user_id=eq.${user.id}`,
+      }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setTasks(prev => {
+            if (prev.some(t => t.id === payload.new.id)) return prev
+            return [...prev, payload.new].sort((a, b) => (a.due_at ?? '') > (b.due_at ?? '') ? 1 : -1)
+          })
+        } else if (payload.eventType === 'UPDATE') {
+          setTasks(prev => prev.map(t => t.id === payload.new.id ? payload.new : t))
+        } else if (payload.eventType === 'DELETE') {
+          setTasks(prev => prev.filter(t => t.id !== payload.old.id))
+        }
+      })
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [user])
+
   const addTask = async ({ title, description, due_date, due_time, priority }) => {
     const level = getLevel(priority)
     const hasTime = !!due_time
