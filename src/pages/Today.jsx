@@ -248,7 +248,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
 
       {/* Task List */}
       {view === 'tasks' && (
-      <div className="flex-1 overflow-y-auto px-5 space-y-2 pb-4">
+      <div className="flex-1 overflow-y-auto px-5 space-y-2 md:space-y-1 pb-4">
         {pending.length === 0 && completed.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="w-14 h-14 bg-[#1a1a1a] rounded-2xl flex items-center justify-center mb-3">

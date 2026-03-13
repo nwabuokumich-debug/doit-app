@@ -38,7 +38,7 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
 
   return (
     <>
-    <div ref={containerRef} className={`task-enter flex items-start gap-3 p-4 rounded-2xl border transition-all ${
+    <div ref={containerRef} className={`task-enter flex items-start gap-3 p-4 md:p-2.5 rounded-2xl border transition-all ${
       task.completed
         ? 'bg-[#1a1a1a] border-white/5 opacity-60'
         : isOverdue
