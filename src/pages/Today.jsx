@@ -21,52 +21,14 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
   const [showCalendar, setShowCalendar] = useState(false)
   const [view, setView] = useState('tasks') // 'tasks' | 'timeline'
 
-  // Combo multiplier tracking
-  const lastCompletedRef = useRef(null)
-  const lastCompletedTaskRef = useRef(null)
-  const [comboMultiplier, setComboMultiplier] = useState(0)
+  // Combo — derived from task data so it syncs across devices
+  const [comboTick, setComboTick] = useState(0)
 
-  const getMultiplierNow = useCallback(() => {
-    if (!lastCompletedRef.current) return 0
-    const mins = (Date.now() - lastCompletedRef.current) / 60000
-    if (mins <= 30) return 7
-    if (mins <= 60) return 4
-    return 0
-  }, [])
-
-  // Decay combo display every 30s as time passes
+  // Decay combo display every 30s
   useEffect(() => {
-    const interval = setInterval(() => {
-      setComboMultiplier(getMultiplierNow())
-    }, 30000)
+    const interval = setInterval(() => setComboTick(t => t + 1), 30000)
     return () => clearInterval(interval)
-  }, [getMultiplierNow])
-
-  const handleComplete = useCallback(async (taskId) => {
-    const mult = getMultiplierNow()
-    lastCompletedRef.current = Date.now()
-    lastCompletedTaskRef.current = taskId
-    setComboMultiplier(7) // next completion within 30min = +7
-    return onComplete(taskId, mult)
-  }, [getMultiplierNow, onComplete])
-
-  const handleUncomplete = useCallback(async (taskId) => {
-    if (lastCompletedTaskRef.current === taskId) {
-      lastCompletedRef.current = null
-      lastCompletedTaskRef.current = null
-      setComboMultiplier(0)
-    }
-    return onUncomplete(taskId)
-  }, [onUncomplete])
-
-  const handleDelete = useCallback(async (taskId) => {
-    if (lastCompletedTaskRef.current === taskId) {
-      lastCompletedRef.current = null
-      lastCompletedTaskRef.current = null
-      setComboMultiplier(0)
-    }
-    return onDelete(taskId)
-  }, [onDelete])
+  }, [])
 
   const isPast = isBefore(startOfDay(selectedDate), startOfDay(new Date()))
   const dateStr = format(selectedDate, 'yyyy-MM-dd')
@@ -86,16 +48,36 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
     prevEarned.current = score.earned
   }, [score.earned])
 
-  // Reset combo if last completed task was deleted remotely
-  useEffect(() => {
-    if (!lastCompletedTaskRef.current) return
-    const stillExists = dayTasks.some(t => t.id === lastCompletedTaskRef.current)
-    if (!stillExists) {
-      lastCompletedRef.current = null
-      lastCompletedTaskRef.current = null
-      setComboMultiplier(0)
+  // Derive combo from most recent completed_at timestamp
+  const getComboFromTasks = () => {
+    const completedToday = dayTasks.filter(t => t.completed && t.completed_at)
+    if (completedToday.length === 0) return 0
+    const latest = completedToday.reduce((a, b) =>
+      new Date(a.completed_at) > new Date(b.completed_at) ? a : b
+    )
+    const mins = (Date.now() - new Date(latest.completed_at).getTime()) / 60000
+    if (mins <= 30) return 7
+    if (mins <= 60) return 4
+    return 0
+  }
+  const comboMultiplier = getComboFromTasks() // eslint-disable-line react-hooks/exhaustive-deps
+  void comboTick // trigger recalc on tick
+
+  const handleComplete = useCallback(async (taskId) => {
+    // Calculate bonus from most recent completed task
+    const completedToday = getTasksForDate(format(selectedDate, 'yyyy-MM-dd'))
+      .filter(t => t.completed && t.completed_at && t.id !== taskId)
+    let bonus = 0
+    if (completedToday.length > 0) {
+      const latest = completedToday.reduce((a, b) =>
+        new Date(a.completed_at) > new Date(b.completed_at) ? a : b
+      )
+      const mins = (Date.now() - new Date(latest.completed_at).getTime()) / 60000
+      if (mins <= 30) bonus = 7
+      else if (mins <= 60) bonus = 4
     }
-  }, [dayTasks])
+    return onComplete(taskId, bonus)
+  }, [getTasksForDate, selectedDate, onComplete])
 
   const sortByPriority = arr => [...arr].sort((a, b) => b.points - a.points)
   const completed = sortByPriority(dayTasks.filter(t => t.completed))
@@ -273,7 +255,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
         {pending.length > 0 && (
           <div className="space-y-2">
             {pending.map(task => (
-              <TaskItem key={task.id} task={task} onComplete={handleComplete} onUncomplete={handleUncomplete} onDelete={handleDelete} onUpdate={onUpdate} multiplier={comboMultiplier} />
+              <TaskItem key={task.id} task={task} onComplete={handleComplete} onUncomplete={onUncomplete} onDelete={onDelete} onUpdate={onUpdate} multiplier={comboMultiplier} />
             ))}
           </div>
         )}
@@ -283,7 +265,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
             <p className="text-xs text-gray-600 uppercase tracking-widest mb-2 px-1">Completed</p>
             <div className="space-y-2">
               {completed.map(task => (
-                <TaskItem key={task.id} task={task} onComplete={handleComplete} onUncomplete={handleUncomplete} onDelete={handleDelete} onUpdate={onUpdate} multiplier={1} />
+                <TaskItem key={task.id} task={task} onComplete={handleComplete} onUncomplete={onUncomplete} onDelete={onDelete} onUpdate={onUpdate} multiplier={1} />
               ))}
             </div>
           </div>
