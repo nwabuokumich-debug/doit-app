@@ -42,17 +42,6 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
     return () => clearInterval(interval)
   }, [getMultiplierNow])
 
-  // Reset combo if last completed task was deleted remotely
-  useEffect(() => {
-    if (!lastCompletedTaskRef.current) return
-    const stillExists = dayTasks.some(t => t.id === lastCompletedTaskRef.current)
-    if (!stillExists) {
-      lastCompletedRef.current = null
-      lastCompletedTaskRef.current = null
-      setComboMultiplier(0)
-    }
-  }, [dayTasks])
-
   const handleComplete = useCallback(async (taskId) => {
     const mult = getMultiplierNow()
     lastCompletedRef.current = Date.now()
@@ -96,6 +85,17 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
     }
     prevEarned.current = score.earned
   }, [score.earned])
+
+  // Reset combo if last completed task was deleted remotely
+  useEffect(() => {
+    if (!lastCompletedTaskRef.current) return
+    const stillExists = dayTasks.some(t => t.id === lastCompletedTaskRef.current)
+    if (!stillExists) {
+      lastCompletedRef.current = null
+      lastCompletedTaskRef.current = null
+      setComboMultiplier(0)
+    }
+  }, [dayTasks])
 
   const sortByPriority = arr => [...arr].sort((a, b) => b.points - a.points)
   const completed = sortByPriority(dayTasks.filter(t => t.completed))
