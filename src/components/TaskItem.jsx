@@ -33,12 +33,12 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
 
   return (
     <>
-    <div className={`task-enter flex items-start gap-3 p-4 md:p-3 rounded-2xl border transition-all ${
+    <div className={`task-enter flex items-start gap-3 p-4 rounded-2xl border transition-all ${
       task.completed
         ? 'bg-[#1a1a1a] border-white/5 opacity-60'
         : isOverdue
         ? 'bg-red-500/5 border-red-500/20'
-        : 'bg-[#1a1a1a] md:bg-[#1e1e1e] border-white/5 md:border-white/10'
+        : 'bg-[#1a1a1a] border-white/5'
     }`}>
       {/* Checkbox */}
       <button
@@ -62,7 +62,7 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full flex-shrink-0 ${level.color}`} />
-          <p className={`text-sm md:text-base font-medium text-white truncate ${task.completed ? 'line-through text-gray-500' : ''}`}>
+          <p className={`text-sm font-medium text-white truncate ${task.completed ? 'line-through text-gray-500' : ''}`}>
             {task.title}
           </p>
         </div>
@@ -84,8 +84,8 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
         )}
       </div>
 
-      {/* Points + actions */}
-      <div className="flex flex-col md:flex-row items-end md:items-center gap-2 flex-shrink-0">
+      {/* Points badge */}
+      <div className="flex flex-col items-end gap-2 flex-shrink-0">
         <div className="flex flex-col items-end">
           {(late || onTime) ? (
             <>
@@ -104,21 +104,19 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
             </span>
           )}
         </div>
-        <div className="flex flex-col md:flex-row gap-2">
-          {!task.completed && (
-            <button onClick={() => setShowEdit(true)} className="text-gray-600 hover:text-indigo-400 transition-colors">
-              <Pencil size={14} />
-            </button>
-          )}
-          {task.completed && (
-            <button onClick={() => setShowNote(true)} className={`transition-colors ${task.description ? 'text-indigo-400' : 'text-gray-600 hover:text-indigo-400'}`}>
-              <StickyNote size={14} />
-            </button>
-          )}
-          <button onClick={() => onDelete(task.id)} className="text-gray-600 hover:text-red-400 transition-colors">
-            <Trash2 size={14} />
+        {!task.completed && (
+          <button onClick={() => setShowEdit(true)} className="text-gray-600 hover:text-indigo-400 transition-colors">
+            <Pencil size={14} />
           </button>
-        </div>
+        )}
+        {task.completed && (
+          <button onClick={() => setShowNote(true)} className={`transition-colors ${task.description ? 'text-indigo-400' : 'text-gray-600 hover:text-indigo-400'}`}>
+            <StickyNote size={14} />
+          </button>
+        )}
+        <button onClick={() => onDelete(task.id)} className="text-gray-600 hover:text-red-400 transition-colors">
+          <Trash2 size={14} />
+        </button>
       </div>
     </div>
 

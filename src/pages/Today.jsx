@@ -20,6 +20,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
   const [showModal, setShowModal] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const [view, setView] = useState('tasks') // 'tasks' | 'timeline'
+  const [headerCollapsed, setHeaderCollapsed] = useState(false)
 
   // Combo — derived from task data so it syncs across devices
   const [comboTick, setComboTick] = useState(0)
@@ -90,7 +91,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
   return (
     <div className="flex flex-col h-full relative">
       {/* Header */}
-      <div className="px-5 pt-4 pb-2 md:pt-2 md:pb-1">
+      <div className="px-5 pt-4 pb-2">
         <div className="flex items-center justify-between mb-1">
           <p className="text-xs text-gray-500 uppercase tracking-widest">{format(selectedDate, 'MMMM yyyy')}</p>
           <button onClick={() => setShowCalendar(true)} className="text-gray-400 hover:text-white transition-colors">
@@ -110,7 +111,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
         </div>
 
         {/* Week strip — slim pills */}
-        <div className="flex gap-1 mt-2 md:mt-1">
+        <div className="flex gap-1 mt-2">
           {weekDays.map(day => {
             const isSelected = isSameDay(day, selectedDate)
             const todayFlag = isToday(day)
@@ -146,74 +147,89 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
           })}
         </div>
 
-        {/* Combo banner */}
-        {comboMultiplier > 0 && (
-          <div key={comboMultiplier} className="badge-pop mt-3 md:mt-1.5 flex items-center gap-3 px-4 py-3 md:py-1.5 rounded-2xl bg-[#1a1a1a] border border-orange-500/40 overflow-hidden relative">
-            {/* Glow streak */}
-            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-yellow-400/5 to-transparent pointer-events-none" />
-            {/* Multiplier */}
-            <div className="flex items-baseline gap-0.5 flex-shrink-0 z-10">
-              <span className="text-3xl md:text-xl font-black text-orange-400 leading-none">+{comboMultiplier}</span>
+        {/* Collapsible section */}
+        <div className={`overflow-hidden transition-all duration-300 ${headerCollapsed ? 'max-h-0' : 'max-h-80'}`}>
+          {/* Combo banner */}
+          {comboMultiplier > 0 && (
+            <div key={comboMultiplier} className="badge-pop mt-3 flex items-center gap-3 px-4 py-3 rounded-2xl bg-[#1a1a1a] border border-orange-500/40 overflow-hidden relative">
+              {/* Glow streak */}
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-yellow-400/5 to-transparent pointer-events-none" />
+              {/* Multiplier */}
+              <div className="flex items-baseline gap-0.5 flex-shrink-0 z-10">
+                <span className="text-3xl font-black text-orange-400 leading-none">+{comboMultiplier}</span>
+              </div>
+              {/* Divider */}
+              <div className="w-px h-8 bg-orange-500/30 flex-shrink-0 z-10" />
+              {/* Labels */}
+              <div className="flex flex-col z-10">
+                <span className="text-xs font-black text-orange-300 tracking-widest uppercase leading-tight">Combo Active</span>
+                <span className="text-[10px] text-gray-500 mt-0.5">Keep completing tasks!</span>
+              </div>
+              {/* Flame */}
+              <span className="ml-auto text-2xl z-10">🔥</span>
             </div>
-            {/* Divider */}
-            <div className="w-px h-8 bg-orange-500/30 flex-shrink-0 z-10" />
-            {/* Labels */}
-            <div className="flex flex-col z-10">
-              <span className="text-xs font-black text-orange-300 tracking-widest uppercase leading-tight">Combo Active</span>
-              <span className="text-[10px] text-gray-500 mt-0.5">Keep completing tasks!</span>
-            </div>
-            {/* Flame */}
-            <span className="ml-auto text-2xl z-10">🔥</span>
-          </div>
-        )}
+          )}
 
-        {/* Score bar — compact */}
-        <div className={`mt-3 md:mt-1.5 rounded-xl px-4 py-2.5 md:py-1.5 border transition-all duration-500 ${
-          isPerfect
-            ? 'bg-gradient-to-br from-yellow-500/20 to-amber-500/10 border-yellow-500/30 perfect-pulse'
-            : 'bg-gradient-to-br from-indigo-500/20 to-purple-500/10 border-indigo-500/20'
-        }`}>
-          <div className="flex items-center gap-3">
-            <div className="flex items-baseline gap-1 flex-shrink-0">
-              <span className={`text-xl font-bold text-white ${scoreAnim ? 'score-pop' : ''}`}>
-                {score.earned}
-              </span>
-              <span className="text-gray-500 text-xs">/ {score.possible}</span>
-            </div>
-            <div className="flex-1 h-1.5 bg-black/30 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  isPerfect
-                    ? 'bg-gradient-to-r from-yellow-400 to-amber-500'
-                    : 'bg-gradient-to-r from-indigo-500 to-purple-500'
-                }`}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              {isPerfect ? (
-                <span className="badge-pop text-xs font-extrabold px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-300 tracking-wide">
-                  PERFECT
+          {/* Score bar — compact */}
+          <div className={`mt-3 rounded-xl px-4 py-2.5 border transition-all duration-500 ${
+            isPerfect
+              ? 'bg-gradient-to-br from-yellow-500/20 to-amber-500/10 border-yellow-500/30 perfect-pulse'
+              : 'bg-gradient-to-br from-indigo-500/20 to-purple-500/10 border-indigo-500/20'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className="flex items-baseline gap-1 flex-shrink-0">
+                <span className={`text-xl font-bold text-white ${scoreAnim ? 'score-pop' : ''}`}>
+                  {score.earned}
                 </span>
-              ) : (
-                <>
-                  <Zap size={12} className="text-yellow-400" />
-                  <span className="text-sm font-bold text-yellow-400">{pct}%</span>
-                </>
-              )}
+                <span className="text-gray-500 text-xs">/ {score.possible}</span>
+              </div>
+              <div className="flex-1 h-1.5 bg-black/30 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    isPerfect
+                      ? 'bg-gradient-to-r from-yellow-400 to-amber-500'
+                      : 'bg-gradient-to-r from-indigo-500 to-purple-500'
+                  }`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                {isPerfect ? (
+                  <span className="badge-pop text-xs font-extrabold px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-300 tracking-wide">
+                    PERFECT
+                  </span>
+                ) : (
+                  <>
+                    <Zap size={12} className="text-yellow-400" />
+                    <span className="text-sm font-bold text-yellow-400">{pct}%</span>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex justify-between text-[10px] text-gray-600 mt-1">
-            <span>{completed.length} done · {isPast ? 'sealed' : `${pending.length} left`}</span>
-            <span>{isToday(selectedDate) ? "Today's Score" : isPast ? 'Final Score' : 'Day Score'}</span>
+            <div className="flex justify-between text-[10px] text-gray-600 mt-1">
+              <span>{completed.length} done · {isPast ? 'sealed' : `${pending.length} left`}</span>
+              <span>{isToday(selectedDate) ? "Today's Score" : isPast ? 'Final Score' : 'Day Score'}</span>
+            </div>
           </div>
         </div>
 
+        {/* Collapse toggle */}
+        <button
+          onClick={() => setHeaderCollapsed(c => !c)}
+          className="w-full flex items-center justify-center py-1 mt-1"
+        >
+          <div className="flex items-center gap-1.5 text-gray-600 hover:text-gray-400 transition-colors">
+            <div className={`w-8 h-0.5 bg-gray-600 rounded-full`} />
+            <ChevronLeft size={12} className={`transition-transform duration-300 ${headerCollapsed ? '-rotate-90' : 'rotate-90'}`} />
+            <div className={`w-8 h-0.5 bg-gray-600 rounded-full`} />
+          </div>
+        </button>
+
         {/* View toggle */}
-        <div className="flex gap-1 mt-3 md:mt-1.5 bg-[#141414] rounded-xl p-1">
+        <div className="flex gap-1 bg-[#141414] rounded-xl p-1">
           <button
             onClick={() => setView('tasks')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 md:py-1 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
               view === 'tasks' ? 'bg-[#1a1a1a] text-white' : 'text-gray-600'
             }`}
           >
@@ -221,7 +237,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
           </button>
           <button
             onClick={() => setView('timeline')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 md:py-1 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
               view === 'timeline' ? 'bg-[#1a1a1a] text-white' : 'text-gray-600'
             }`}
           >
@@ -241,7 +257,7 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
 
       {/* Task List */}
       {view === 'tasks' && (
-      <div className="flex-1 overflow-y-auto px-5 space-y-2 md:space-y-1 pb-4">
+      <div className="flex-1 overflow-y-auto px-5 space-y-2 pb-4">
         {pending.length === 0 && completed.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="w-14 h-14 bg-[#1a1a1a] rounded-2xl flex items-center justify-center mb-3">

@@ -68,7 +68,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-dvh max-w-md md:max-w-2xl lg:max-w-4xl mx-auto bg-[#0f0f0f] overflow-hidden">
+    <div className="flex flex-col h-dvh max-w-md mx-auto bg-[#0f0f0f] overflow-hidden">
       <main className="flex-1 overflow-hidden flex flex-col">
         {renderPage()}
       </main>
