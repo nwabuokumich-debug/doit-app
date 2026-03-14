@@ -1,19 +1,19 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { Trash2, Timer, Pencil, StickyNote } from 'lucide-react'
-import { isLate, isOnTime, earnedPoints } from '../hooks/useTasks'
+import { isLate, isOnTime, earnedPoints, missedPoints } from '../hooks/useTasks'
 import { getLevel } from '../lib/levels'
 import AddTaskModal from './AddTaskModal'
 import NoteModal from './NoteModal'
 
-export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onUpdate, multiplier = 1 }) {
+export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onUpdate, multiplier = 1, locked = false }) {
   const [showEdit, setShowEdit] = useState(false)
   const [showNote, setShowNote] = useState(false)
   const [animating, setAnimating] = useState(false)
   const [showFloat, setShowFloat] = useState(false)
 
   const handleToggle = async () => {
-    if (animating) return
+    if (animating || locked) return
     setAnimating(true)
     if (task.completed) {
       await onUncomplete(task.id)
@@ -30,6 +30,7 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
   const late = isLate(task)
   const onTime = isOnTime(task)
   const pts = earnedPoints(task)
+  const deduction = missedPoints(task)
 
   return (
     <>
@@ -43,11 +44,14 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
       {/* Checkbox */}
       <button
         onClick={handleToggle}
+        disabled={locked}
         className={`mt-0.5 w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${
           animating ? 'pop-anim' : ''
         } ${
           task.completed
             ? 'bg-indigo-500 border-indigo-500'
+            : locked
+            ? 'border-gray-700 cursor-default'
             : 'border-gray-600 hover:border-indigo-400'
         }`}
       >
@@ -97,26 +101,34 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
               <span className="text-[10px] text-gray-600 line-through mt-0.5">+{task.points}</span>
             </>
           ) : (
-            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-              task.completed ? level.badge : 'bg-white/5 text-gray-400'
-            }`}>
-              +{task.points}
-            </span>
+            deduction > 0 ? (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">
+                -{deduction}
+              </span>
+            ) : (
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                task.completed ? level.badge : 'bg-white/5 text-gray-400'
+              }`}>
+                +{task.points}
+              </span>
+            )
           )}
         </div>
-        {!task.completed && (
+        {!locked && !task.completed && (
           <button onClick={() => setShowEdit(true)} className="text-gray-600 hover:text-indigo-400 transition-colors">
             <Pencil size={14} />
           </button>
         )}
-        {task.completed && (
+        {!locked && task.completed && (
           <button onClick={() => setShowNote(true)} className={`transition-colors ${task.description ? 'text-indigo-400' : 'text-gray-600 hover:text-indigo-400'}`}>
             <StickyNote size={14} />
           </button>
         )}
-        <button onClick={() => onDelete(task.id)} className="text-gray-600 hover:text-red-400 transition-colors">
-          <Trash2 size={14} />
-        </button>
+        {!locked && (
+          <button onClick={() => onDelete(task.id)} className="text-gray-600 hover:text-red-400 transition-colors">
+            <Trash2 size={14} />
+          </button>
+        )}
       </div>
     </div>
 

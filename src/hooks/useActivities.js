@@ -19,12 +19,10 @@ export function useActivities(user) {
 
   const fetchSessions = useCallback(async () => {
     if (!user) return
-    const todayStart = startOfDay(new Date()).toISOString()
     const { data } = await supabase
       .from('activity_sessions')
       .select('*')
       .eq('user_id', user.id)
-      .or(`started_at.gte.${todayStart},ended_at.is.null`)
       .order('started_at', { ascending: true })
     if (data) setSessions(data)
     setLoading(false)
@@ -122,6 +120,35 @@ export function useActivities(user) {
     return { error: null }
   }
 
+  const setActivityTime = async (activityId, hours, minutes, dateStr) => {
+    const totalMs = (hours * 3600 + minutes * 60) * 1000
+    // Remove all existing completed sessions for this activity on this date
+    const toDelete = sessions.filter(s =>
+      s.activity_id === activityId && s.ended_at &&
+      format(new Date(s.started_at), 'yyyy-MM-dd') === dateStr
+    )
+    setSessions(prev => prev.filter(s => !toDelete.some(d => d.id === s.id)))
+    for (const s of toDelete) {
+      await supabase.from('activity_sessions').delete().eq('id', s.id)
+    }
+    if (totalMs <= 0) return { error: null }
+    const isToday = dateStr === format(new Date(), 'yyyy-MM-dd')
+    const ended_at = isToday ? new Date().toISOString() : new Date(`${dateStr}T23:59:00`).toISOString()
+    const started_at = new Date(new Date(ended_at).getTime() - totalMs).toISOString()
+    const tempId = `temp-${Date.now()}`
+    setSessions(prev => [...prev, { id: tempId, activity_id: activityId, user_id: user.id, started_at, ended_at }])
+    const { data, error } = await supabase
+      .from('activity_sessions')
+      .insert({ activity_id: activityId, user_id: user.id, started_at, ended_at })
+      .select().single()
+    if (error) {
+      setSessions(prev => prev.filter(s => s.id !== tempId))
+      return { error }
+    }
+    setSessions(prev => prev.map(s => s.id === tempId ? data : s))
+    return { error: null }
+  }
+
   const stopSession = async (activityId) => {
     const session = sessions.find(s => !s.ended_at && s.activity_id === activityId)
     if (!session) return { error: null }
@@ -139,18 +166,23 @@ export function useActivities(user) {
 
   const getTodaySessions = () => {
     const todayStr = format(new Date(), 'yyyy-MM-dd')
+    return getSessionsForDate(todayStr)
+  }
+
+  const getSessionsForDate = (dateStr) => {
     return sessions.filter(s => {
       const start = new Date(s.started_at)
-      return format(start, 'yyyy-MM-dd') === todayStr
+      return format(start, 'yyyy-MM-dd') === dateStr
     })
   }
 
-  const getTodaySummary = () => {
-    const todaySessions = getTodaySessions()
+  const getSummaryForDate = (dateStr) => {
+    const dateSessions = getSessionsForDate(dateStr)
+    const isToday = dateStr === format(new Date(), 'yyyy-MM-dd')
     const now = Date.now()
     const byActivity = {}
-    for (const s of todaySessions) {
-      const end = s.ended_at ? new Date(s.ended_at).getTime() : now
+    for (const s of dateSessions) {
+      const end = s.ended_at ? new Date(s.ended_at).getTime() : (isToday ? now : new Date(s.started_at).getTime())
       const start = new Date(s.started_at).getTime()
       const secs = Math.max(0, (end - start) / 1000)
       if (!byActivity[s.activity_id]) {
@@ -167,6 +199,10 @@ export function useActivities(user) {
     return Object.values(byActivity).sort((a, b) => b.totalSeconds - a.totalSeconds)
   }
 
+  const getTodaySummary = () => {
+    return getSummaryForDate(format(new Date(), 'yyyy-MM-dd'))
+  }
+
   return {
     activities,
     sessions,
@@ -176,8 +212,11 @@ export function useActivities(user) {
     deleteActivity,
     startSession,
     stopSession,
+    setActivityTime,
     getTodaySessions,
     getTodaySummary,
+    getSessionsForDate,
+    getSummaryForDate,
   }
 }
 

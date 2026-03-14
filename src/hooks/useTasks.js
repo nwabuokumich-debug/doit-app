@@ -24,6 +24,14 @@ export function earnedPoints(task) {
   return Math.max(0, pts)
 }
 
+export function missedPoints(task) {
+  if (task.completed) return 0
+  if (!task.due_at) return 0
+  // Only deduct if the task's due date has passed
+  if (new Date(task.due_at) > new Date()) return 0
+  return getLevel(task.priority).deduction
+}
+
 export function useTasks(user) {
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
@@ -181,8 +189,9 @@ export function useTasks(user) {
   const getDailyScore = (dateStr) => {
     const dayTasks = getTasksForDate(dateStr)
     const earned = dayTasks.reduce((s, t) => s + earnedPoints(t), 0)
+    const deducted = dayTasks.reduce((s, t) => s + missedPoints(t), 0)
     const possible = dayTasks.reduce((s, t) => s + t.points, 0)
-    return { earned, possible, tasks: dayTasks }
+    return { earned, deducted, possible, tasks: dayTasks }
   }
 
   const todayStr = format(new Date(), 'yyyy-MM-dd')

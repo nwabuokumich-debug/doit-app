@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { format } from 'date-fns'
-import { Play, Square, Trash2, Plus, X, BarChart2, ChevronLeft } from 'lucide-react'
+import { format, subDays, addDays, isToday as dateFnsIsToday } from 'date-fns'
+import { Play, Square, Trash2, Plus, X, BarChart2, ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 import { useActivities, formatDuration } from '../hooks/useActivities'
 
 const COLORS = [
@@ -91,6 +91,63 @@ function AddActivityModal({ onClose, onAdd }) {
               Done
             </button>
           </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function EditTimeModal({ activity, dateStr, currentSeconds, onClose, onSave }) {
+  const [hours, setHours] = useState(Math.floor(currentSeconds / 3600))
+  const [minutes, setMinutes] = useState(Math.floor((currentSeconds % 3600) / 60))
+  const [loading, setLoading] = useState(false)
+
+  const handle = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    await onSave(activity.id, hours, minutes, dateStr)
+    setLoading(false)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm px-0 sm:px-4">
+      <div className="w-full sm:max-w-md bg-[#1a1a1a] rounded-t-3xl sm:rounded-2xl border border-white/5 p-6 pb-8">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: activity.color }} />
+            <h2 className="text-lg font-semibold text-white">{activity.name}</h2>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-white p-1"><X size={20} /></button>
+        </div>
+        <p className="text-xs text-gray-500 mb-5">Set total time for {format(new Date(dateStr + 'T12:00'), 'MMMM d')}</p>
+        <form onSubmit={handle} className="space-y-5">
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <label className="text-xs text-gray-400 mb-1 block">Hours</label>
+              <input
+                type="number" min="0" max="23" value={hours}
+                onChange={e => setHours(Math.max(0, Math.min(23, parseInt(e.target.value) || 0)))}
+                className="w-full bg-[#252525] text-white text-center text-2xl font-bold rounded-xl px-4 py-3 outline-none border border-white/5 focus:border-indigo-500 transition-colors"
+              />
+            </div>
+            <div className="pb-3 text-gray-500 font-bold text-xl">:</div>
+            <div className="flex-1">
+              <label className="text-xs text-gray-400 mb-1 block">Minutes</label>
+              <input
+                type="number" min="0" max="59" value={minutes}
+                onChange={e => setMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                className="w-full bg-[#252525] text-white text-center text-2xl font-bold rounded-xl px-4 py-3 outline-none border border-white/5 focus:border-indigo-500 transition-colors"
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Saving…' : 'Save'}
+          </button>
         </form>
       </div>
     </div>
@@ -230,11 +287,13 @@ function ActivityRings({ summary }) {
   )
 }
 
-function AnalyzeView({ summary, onBack }) {
+function AnalyzeView({ summary, onBack, selectedDate, onPrevDay, onNextDay }) {
+  const isSelectedToday = dateFnsIsToday(selectedDate)
   const now = new Date()
-  const dayStart = new Date(now)
+  const dayStart = new Date(selectedDate)
   dayStart.setHours(0, 0, 0, 0)
-  const elapsedSecs = (now - dayStart) / 1000
+  const dayEnd = isSelectedToday ? now : new Date(selectedDate.getTime() + 86400000)
+  const elapsedSecs = (dayEnd - dayStart) / 1000
 
   const totalTracked = summary.reduce((s, a) => s + a.totalSeconds, 0)
   const untrackedSecs = Math.max(0, elapsedSecs - totalTracked)
@@ -286,16 +345,30 @@ function AnalyzeView({ summary, onBack }) {
         <button onClick={onBack} className="text-gray-400 hover:text-white transition-colors -ml-1">
           <ChevronLeft size={22} />
         </button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-xl font-bold text-white">Analyze</h1>
-          <p className="text-xs text-gray-500">{format(now, 'EEEE, MMMM d')}</p>
+        </div>
+        <div className="flex items-center gap-1">
+          <button onClick={onPrevDay} className="text-gray-400 hover:text-white p-1 transition-colors">
+            <ChevronLeft size={18} />
+          </button>
+          <span className="text-xs text-gray-400 min-w-[80px] text-center">
+            {isSelectedToday ? 'Today' : format(selectedDate, 'MMM d')}
+          </span>
+          <button
+            onClick={onNextDay}
+            disabled={isSelectedToday}
+            className="text-gray-400 hover:text-white p-1 transition-colors disabled:opacity-30"
+          >
+            <ChevronRight size={18} />
+          </button>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-4">
         {/* Pie chart */}
         <div className="mx-5 mt-2">
-          <p className="text-xs text-gray-400 mb-2">Day Breakdown</p>
+          <p className="text-xs text-gray-400 mb-2">{isSelectedToday ? 'Today\'s Breakdown' : format(selectedDate, 'EEEE, MMM d')}</p>
           <div className="flex flex-col items-center bg-[#141414] rounded-2xl border border-white/5 p-5">
             {totalSecs > 0 && (
               <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
@@ -391,12 +464,14 @@ function AnalyzeView({ summary, onBack }) {
 export default function ActivityPage({ user }) {
   const {
     activities, activeSessions, loading,
-    addActivity, deleteActivity, startSession, stopSession,
-    getTodaySessions, getTodaySummary,
+    addActivity, deleteActivity, startSession, stopSession, setActivityTime,
+    getTodaySessions, getTodaySummary, getSummaryForDate,
   } = useActivities(user)
 
   const [showModal, setShowModal] = useState(false)
+  const [manualActivity, setManualActivity] = useState(null) // activity to log manual time for
   const [view, setView] = useState('track') // 'track' | 'analyze'
+  const [selectedDate, setSelectedDate] = useState(new Date())
   const [, setTick] = useState(0)
 
   // Tick every second for live updates
@@ -408,12 +483,28 @@ export default function ActivityPage({ user }) {
   const todaySessions = getTodaySessions()
   const summary = getTodaySummary()
 
+  const selectedDateStr = format(selectedDate, 'yyyy-MM-dd')
+  const analyzeSummary = getSummaryForDate(selectedDateStr)
+
+  const handlePrevDay = () => setSelectedDate(d => subDays(d, 1))
+  const handleNextDay = () => {
+    if (!dateFnsIsToday(selectedDate)) setSelectedDate(d => addDays(d, 1))
+  }
+
   if (view === 'analyze') {
-    return <AnalyzeView summary={summary} onBack={() => setView('track')} />
+    return (
+      <AnalyzeView
+        summary={analyzeSummary}
+        onBack={() => setView('track')}
+        selectedDate={selectedDate}
+        onPrevDay={handlePrevDay}
+        onNextDay={handleNextDay}
+      />
+    )
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       <div className="px-5 pt-4 pb-2">
         <h1 className="text-xl font-bold text-white">Activity</h1>
         <p className="text-xs text-gray-500">{format(new Date(), 'EEEE, MMMM d')}</p>
@@ -473,6 +564,12 @@ export default function ActivityPage({ user }) {
                       <Play size={16} fill="currentColor" />
                     </button>
                   )}
+                  <button
+                    onClick={() => setManualActivity(act)}
+                    className="text-gray-600 hover:text-indigo-400 transition-colors p-1"
+                  >
+                    <Clock size={14} />
+                  </button>
                   <button
                     onClick={() => deleteActivity(act.id)}
                     className="text-gray-600 hover:text-red-400 transition-colors"
@@ -538,7 +635,11 @@ export default function ActivityPage({ user }) {
       {/* FAB */}
       <button
         onClick={() => setShowModal(true)}
-        className="absolute bottom-20 right-5 w-14 h-14 bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/25 transition-colors z-20"
+        className="fixed w-14 h-14 bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/25 transition-colors z-20"
+        style={{
+          bottom: 'calc(82px + max(12px, env(safe-area-inset-bottom)))',
+          right: 'max(20px, calc(50vw - 204px))',
+        }}
       >
         <Plus size={24} className="text-white" />
       </button>
@@ -547,6 +648,16 @@ export default function ActivityPage({ user }) {
         <AddActivityModal
           onClose={() => setShowModal(false)}
           onAdd={addActivity}
+        />
+      )}
+
+      {manualActivity && (
+        <EditTimeModal
+          activity={manualActivity}
+          dateStr={format(new Date(), 'yyyy-MM-dd')}
+          currentSeconds={summary.find(s => s.activityId === manualActivity.id)?.totalSeconds || 0}
+          onClose={() => setManualActivity(null)}
+          onSave={setActivityTime}
         />
       )}
     </div>
