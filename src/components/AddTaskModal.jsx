@@ -307,14 +307,17 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
               className="w-full bg-[#252525] text-white rounded-xl px-4 py-3 pr-10 text-sm outline-none border border-white/5 focus:border-indigo-500 transition-colors"
               placeholder="What do you need to do?"
             />
-            {!isEdit && title.trim() && (
+            {!isEdit && (
               <button
                 type="button"
                 onClick={() => saveTemplate({ title, description, priority })}
+                disabled={!title.trim()}
                 className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${
                   templates.some(t => t.title === title.trim() && t.priority === priority)
                     ? 'text-indigo-400'
-                    : 'text-gray-600 hover:text-indigo-400'
+                    : title.trim()
+                      ? 'text-gray-500 hover:text-indigo-400'
+                      : 'text-gray-800'
                 }`}
                 title="Save as template"
               >
