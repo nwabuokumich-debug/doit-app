@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { X, ChevronLeft, ChevronRight, CalendarDays, Clock } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, CalendarDays, Clock, Bookmark, BookmarkCheck } from 'lucide-react'
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
   isSameDay, addMonths, subMonths, isToday, isBefore, startOfDay
 } from 'date-fns'
 import { LEVELS } from '../lib/levels'
+import { useTemplates } from '../hooks/useTemplates'
 
 // ── Inline calendar ──────────────────────────────────────────────
 function InlineCalendar({ selected, onSelect }) {
@@ -187,6 +188,7 @@ function TimePicker({ value, onChange, selectedDate }) {
 export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, editTask }) {
   const isEdit = !!editTask
   const now = new Date()
+  const { templates, saveTemplate, deleteTemplate } = useTemplates()
 
   // Pre-fill from editTask if editing
   const initDate = isEdit && editTask.due_at
@@ -263,16 +265,66 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
           <button onClick={onClose} className="text-gray-400 hover:text-white p-1"><X size={20} /></button>
         </div>
 
+        {/* Templates row — only show when adding, not editing */}
+        {!isEdit && templates.length > 0 && (
+          <div className="mb-4">
+            <p className="text-[10px] text-gray-600 uppercase tracking-widest mb-2">Templates</p>
+            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {templates.map(t => {
+                const level = LEVELS.find(l => l.value === t.priority)
+                return (
+                  <div key={t.id} className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => { setTitle(t.title); setDescription(t.description); setPriority(t.priority) }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all active:scale-95 ${level.badge} ${level.ring}`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${level.color}`} />
+                      {t.title}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteTemplate(t.id)}
+                      className="text-gray-700 hover:text-red-400 transition-colors flex-shrink-0"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handle} className="space-y-4">
-          <input
-            type="text"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            required
-            autoFocus
-            className="w-full bg-[#252525] text-white rounded-xl px-4 py-3 text-sm outline-none border border-white/5 focus:border-indigo-500 transition-colors"
-            placeholder="What do you need to do?"
-          />
+          <div className="relative">
+            <input
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              required
+              autoFocus
+              className="w-full bg-[#252525] text-white rounded-xl px-4 py-3 pr-10 text-sm outline-none border border-white/5 focus:border-indigo-500 transition-colors"
+              placeholder="What do you need to do?"
+            />
+            {!isEdit && title.trim() && (
+              <button
+                type="button"
+                onClick={() => saveTemplate({ title, description, priority })}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${
+                  templates.some(t => t.title === title.trim() && t.priority === priority)
+                    ? 'text-indigo-400'
+                    : 'text-gray-600 hover:text-indigo-400'
+                }`}
+                title="Save as template"
+              >
+                {templates.some(t => t.title === title.trim() && t.priority === priority)
+                  ? <BookmarkCheck size={16} />
+                  : <Bookmark size={16} />
+                }
+              </button>
+            )}
+          </div>
 
           <textarea
             value={description}
