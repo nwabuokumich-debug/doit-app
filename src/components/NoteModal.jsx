@@ -14,7 +14,7 @@ export default function NoteModal({ task, onClose, onUpdate }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/40 backdrop-blur-sm px-0 sm:px-4">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink/40 backdrop-blur-sm px-0 sm:px-4">
       <div className="w-full sm:max-w-md bg-card rounded-t-3xl sm:rounded-3xl border-[3px] border-ink p-6 pb-8 shadow-sticker-lg">
         <div className="flex items-center justify-between mb-4">
           <div className="flex-1 min-w-0 mr-3">
