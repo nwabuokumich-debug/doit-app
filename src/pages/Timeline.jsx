@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, useCallback } from 'react'
 import { format, isSameDay } from 'date-fns'
 import { getLevel } from '../lib/levels'
 
-const HOUR_HEIGHT = 64  // px per hour
+const HOUR_HEIGHT = 64
 const TOTAL_HEIGHT = HOUR_HEIGHT * 24
 const LABEL_WIDTH = 52
 
@@ -27,19 +27,31 @@ function formatHour(h) {
   return h < 12 ? `${h}am` : `${h - 12}pm`
 }
 
+// Light-theme priority colors
+function priorityColor(priority) {
+  const map = {
+    light:  'oklch(0.70 0.04 95)',
+    basic:  'oklch(0.70 0.16 145)',
+    normal: 'oklch(0.65 0.13 195)',
+    solid:  'oklch(0.78 0.16 75)',
+    major:  'oklch(0.72 0.21 25)',
+    grand:  'oklch(0.65 0.24 27)',
+    epic:   'oklch(0.65 0.20 305)',
+  }
+  return map[priority] ?? map.light
+}
+
 export default function Timeline({ tasks, selectedDate, onUpdate }) {
   const scrollRef = useRef(null)
   const containerRef = useRef(null)
-  const dragRef = useRef(null) // { taskId, startY, startPointerY, currentY }
+  const dragRef = useRef(null)
   const [draggingId, setDraggingId] = useState(null)
   const [dragY, setDragY] = useState(0)
 
-  // Only show completed tasks with a completed_at time on this date
   const completedTasks = tasks.filter(t =>
     t.completed && t.completed_at && isSameDay(new Date(t.completed_at), selectedDate)
   )
 
-  // Scroll to current time on mount / date change
   useEffect(() => {
     if (!scrollRef.current) return
     const now = new Date()
@@ -49,12 +61,10 @@ export default function Timeline({ tasks, selectedDate, onUpdate }) {
     scrollRef.current.scrollTop = Math.max(0, y)
   }, [selectedDate])
 
-  // Current time line position
   const now = new Date()
   const isToday = isSameDay(now, selectedDate)
   const nowY = (now.getHours() + now.getMinutes() / 60) * HOUR_HEIGHT
 
-  // ── Drag logic ──────────────────────────────────────────────────
   const onPointerDown = useCallback((e, task) => {
     e.preventDefault()
     e.currentTarget.setPointerCapture(e.pointerId)
@@ -77,7 +87,7 @@ export default function Timeline({ tasks, selectedDate, onUpdate }) {
     setDragY(newY)
   }, [])
 
-  const onPointerUp = useCallback(async (e) => {
+  const onPointerUp = useCallback(async () => {
     if (!dragRef.current) return
     const { taskId, currentY } = dragRef.current
     dragRef.current = null
@@ -86,7 +96,6 @@ export default function Timeline({ tasks, selectedDate, onUpdate }) {
     await onUpdate(taskId, { completed_at: newIso })
   }, [selectedDate, onUpdate])
 
-  // Group overlapping tasks by proximity
   const getColumn = (task, allTasks) => {
     const y = timeToY(task.completed_at)
     const overlapping = allTasks.filter(t => {
@@ -105,7 +114,7 @@ export default function Timeline({ tasks, selectedDate, onUpdate }) {
   return (
     <div
       ref={scrollRef}
-      className="flex-1 overflow-y-auto"
+      className="flex-1 overflow-y-auto pb-32"
       style={{ WebkitOverflowScrolling: 'touch' }}
     >
       <div
@@ -116,18 +125,15 @@ export default function Timeline({ tasks, selectedDate, onUpdate }) {
         onPointerUp={onPointerUp}
         onPointerLeave={onPointerUp}
       >
-        {/* Hour rows */}
         {Array.from({ length: 24 }, (_, h) => (
           <div
             key={h}
-            className="absolute left-0 right-0 border-t border-white/5"
+            className="absolute left-0 right-0 border-t border-ink/15"
             style={{ top: h * HOUR_HEIGHT, height: HOUR_HEIGHT }}
           >
-            {/* Half-hour line */}
-            <div className="absolute left-0 right-0 border-t border-white/3" style={{ top: HOUR_HEIGHT / 2 }} />
-            {/* Hour label */}
+            <div className="absolute left-0 right-0 border-t border-ink/8" style={{ top: HOUR_HEIGHT / 2 }} />
             <span
-              className="absolute text-[10px] text-gray-600 font-medium"
+              className="absolute font-mono text-[10px] font-bold text-ink/50"
               style={{ left: -LABEL_WIDTH, top: -8, width: LABEL_WIDTH - 8, textAlign: 'right' }}
             >
               {formatHour(h)}
@@ -135,72 +141,55 @@ export default function Timeline({ tasks, selectedDate, onUpdate }) {
           </div>
         ))}
 
-        {/* Current time indicator */}
         {isToday && (
           <div
             className="absolute left-0 right-0 z-10 pointer-events-none flex items-center"
             style={{ top: nowY }}
           >
-            <div className="w-2 h-2 rounded-full bg-red-500 -ml-1 flex-shrink-0" />
-            <div className="flex-1 h-px bg-red-500" />
+            <div className="size-2.5 rounded-full bg-primary border-2 border-ink -ml-1 flex-shrink-0" />
+            <div className="flex-1 h-0.5 bg-primary" />
           </div>
         )}
 
-        {/* Task blocks */}
         {completedTasks.map(task => {
           const isDragging = draggingId === task.id
           const y = isDragging ? dragY : timeToY(task.completed_at)
           const level = getLevel(task.priority)
           const { col, total } = getColumn(task, completedTasks)
           const blockHeight = 52
-          const colWidth = `calc((100% - ${total > 1 ? col * 4 : 0}px) / ${total})`
+          const color = priorityColor(task.priority)
 
           return (
             <div
               key={task.id}
               onPointerDown={(e) => onPointerDown(e, task)}
-              className={`absolute rounded-xl px-2.5 py-1.5 cursor-grab active:cursor-grabbing transition-shadow ${
-                isDragging ? 'shadow-2xl shadow-black/50 z-20 scale-[1.02]' : 'z-10'
+              className={`absolute rounded-xl border-[3px] border-ink px-2.5 py-1.5 cursor-grab active:cursor-grabbing transition-shadow ${
+                isDragging ? 'shadow-sticker-lg z-20 scale-[1.02]' : 'shadow-sticker-sm z-10'
               }`}
               style={{
                 top: y,
                 left: `calc(${col} * (100% / ${total}) + ${col > 0 ? 2 : 0}px)`,
-                width: colWidth,
+                width: `calc((100% - ${total > 1 ? col * 4 : 0}px) / ${total})`,
                 height: blockHeight,
-                backgroundColor: getColorHex(task.priority) + '25',
-                borderLeft: `3px solid ${getColorHex(task.priority)}`,
+                backgroundColor: color,
                 touchAction: 'none',
                 transition: isDragging ? 'none' : 'top 0.15s ease',
               }}
             >
-              <p className="text-xs font-semibold text-white truncate leading-tight">{task.title}</p>
-              <p className="text-[10px] mt-0.5" style={{ color: getColorHex(task.priority) }}>
+              <p className="font-display text-xs font-black text-ink truncate leading-tight">{task.title}</p>
+              <p className="font-mono text-[9px] font-bold text-ink/70 mt-0.5">
                 {format(new Date(task.completed_at), 'h:mm a')} · {level.label}
               </p>
             </div>
           )
         })}
 
-        {/* Empty state */}
         {completedTasks.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <p className="text-gray-700 text-sm">No completed tasks to show</p>
+            <p className="font-mono text-xs font-bold uppercase tracking-widest text-ink/30">No completed tasks</p>
           </div>
         )}
       </div>
     </div>
   )
-}
-
-function getColorHex(priority) {
-  const map = {
-    light:    '#94a3b8',
-    basic:    '#22c55e',
-    normal:   '#14b8a6',
-    solid:    '#eab308',
-    major:    '#f97316',
-    grand:    '#ef4444',
-    epic:     '#a855f7',
-  }
-  return map[priority] ?? '#94a3b8'
 }

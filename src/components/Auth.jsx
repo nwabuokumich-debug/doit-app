@@ -27,65 +27,67 @@ export default function Auth({ onSignIn, onSignUp }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="flex flex-col items-center mb-10">
-          <div className="w-16 h-16 bg-indigo-500 rounded-2xl flex items-center justify-center mb-4">
-            <CheckSquare size={32} className="text-white" />
+        <div className="flex flex-col items-center mb-8">
+          <div className="size-16 rounded-2xl border-[3px] border-ink bg-primary flex items-center justify-center shadow-sticker mb-4">
+            <CheckSquare size={28} className="text-ink" strokeWidth={2.75} />
           </div>
-          <h1 className="text-3xl font-bold text-white">DoIt</h1>
-          <p className="text-gray-400 mt-1 text-sm">Track tasks. Earn points. Win days.</p>
+          <h1 className="font-display text-4xl font-black text-ink">DoIt</h1>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-ink/60 font-bold mt-2">
+            Track · Earn · Win the Day
+          </p>
         </div>
 
         {/* Card */}
-        <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-white/5">
-          <h2 className="text-lg font-semibold text-white mb-5">
+        <div className="rounded-3xl border-[3px] border-ink bg-card p-6 shadow-sticker-lg">
+          <h2 className="font-display text-xl font-black text-ink mb-5">
             {mode === 'signin' ? 'Sign in' : 'Create account'}
           </h2>
 
-          <form onSubmit={handle} className="space-y-4">
+          <form onSubmit={handle} className="space-y-3">
             <div>
-              <label className="text-xs text-gray-400 mb-1 block">Email</label>
+              <label className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/60 mb-1 block">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                className="w-full bg-[#252525] text-white rounded-xl px-4 py-3 text-sm outline-none border border-white/5 focus:border-indigo-500 transition-colors"
+                className="w-full bg-background text-ink rounded-xl px-4 py-3 text-sm outline-none border-[3px] border-ink"
                 placeholder="you@example.com"
               />
             </div>
             <div>
-              <label className="text-xs text-gray-400 mb-1 block">Password</label>
+              <label className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/60 mb-1 block">Password</label>
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full bg-[#252525] text-white rounded-xl px-4 py-3 text-sm outline-none border border-white/5 focus:border-indigo-500 transition-colors"
+                className="w-full bg-background text-ink rounded-xl px-4 py-3 text-sm outline-none border-[3px] border-ink"
                 placeholder="••••••••"
               />
             </div>
 
-            {error && <p className="text-red-400 text-xs">{error}</p>}
-            {message && <p className="text-green-400 text-xs">{message}</p>}
+            {error && <p className="font-mono text-xs font-bold text-destructive">{error}</p>}
+            {message && <p className="font-mono text-xs font-bold text-ink bg-sage rounded-lg px-3 py-2 border-2 border-ink">{message}</p>}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition-colors disabled:opacity-50"
+              className="w-full bg-primary border-[3px] border-ink text-ink font-mono text-xs font-bold uppercase tracking-widest rounded-xl py-3 shadow-sticker active:translate-y-0.5 active:shadow-sticker-sm transition-all disabled:opacity-50"
             >
               {loading ? 'Loading…' : mode === 'signin' ? 'Sign in' : 'Create account'}
             </button>
           </form>
 
-          <p className="text-center text-xs text-gray-500 mt-5">
+          <p className="text-center text-xs text-ink/60 mt-5">
             {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
             <button
               onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setMessage('') }}
-              className="text-indigo-400 hover:text-indigo-300"
+              className="font-bold text-ink underline underline-offset-2"
             >
               {mode === 'signin' ? 'Sign up' : 'Sign in'}
             </button>

@@ -18,7 +18,6 @@ function groupTasks(tasks) {
     if (!groups[label]) groups[label] = []
     groups[label].push(task)
   })
-  // Sort: Overdue first, then Today, Tomorrow, future
   const order = ['Overdue', 'Today', 'Tomorrow']
   return Object.entries(groups).sort(([a], [b]) => {
     const ai = order.indexOf(a)
@@ -29,6 +28,8 @@ function groupTasks(tasks) {
     return a.localeCompare(b)
   })
 }
+
+const TONES = { Overdue: 'bg-destructive', Today: 'bg-primary', Tomorrow: 'bg-accent' }
 
 export default function AllTasks({ tasks, onAdd, onComplete, onUncomplete, onDelete, onUpdate }) {
   const [showModal, setShowModal] = useState(false)
@@ -42,21 +43,42 @@ export default function AllTasks({ tasks, onAdd, onComplete, onUncomplete, onDel
   })
 
   const groups = groupTasks(filtered)
+  const pendingCount = tasks.filter(t => !t.completed).length
+  const overdueCount = tasks.filter(t => !t.completed && t.due_at && new Date(t.due_at) < new Date()).length
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="px-5 pt-6 pb-3">
-        <h1 className="text-2xl font-bold text-white mb-4">All Tasks</h1>
+      <div className="px-5 pt-5 pb-3">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-ink/60 font-bold">
+              Your Backlog
+            </p>
+            <h1 className="font-display text-2xl font-black text-ink leading-none">All Tasks</h1>
+          </div>
+        </div>
+
+        {/* Top stats */}
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="rounded-2xl border-[3px] border-ink bg-card p-3 shadow-sticker-sm">
+            <p className="font-mono text-[9px] font-bold uppercase tracking-widest text-ink/60">Active</p>
+            <p className="font-display text-3xl font-black text-ink leading-none mt-1">{pendingCount}</p>
+          </div>
+          <div className="rounded-2xl border-[3px] border-ink bg-accent p-3 shadow-sticker-sm">
+            <p className="font-mono text-[9px] font-bold uppercase tracking-widest text-ink">Overdue</p>
+            <p className="font-display text-3xl font-black text-ink leading-none mt-1">{overdueCount}</p>
+          </div>
+        </div>
 
         {/* Search */}
-        <div className="flex items-center gap-3 bg-[#1a1a1a] rounded-xl px-3 py-2 border border-white/5 mb-3">
-          <Search size={16} className="text-gray-500" />
+        <div className="flex items-center gap-2 rounded-2xl border-[3px] border-ink bg-card px-3 py-2 mb-3">
+          <Search size={16} className="text-ink/60" strokeWidth={2.5} />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search tasks…"
-            className="bg-transparent text-sm text-white outline-none flex-1 placeholder-gray-600"
+            className="bg-transparent text-sm text-ink outline-none flex-1 placeholder:text-ink/40"
           />
         </div>
 
@@ -66,10 +88,8 @@ export default function AllTasks({ tasks, onAdd, onComplete, onUncomplete, onDel
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium capitalize transition-colors ${
-                filter === f
-                  ? 'bg-indigo-500 text-white'
-                  : 'bg-[#1a1a1a] text-gray-400 border border-white/5'
+              className={`px-3 py-1.5 rounded-xl border-[3px] border-ink font-mono text-[10px] font-bold uppercase tracking-widest transition-all ${
+                filter === f ? 'bg-ink text-background shadow-sticker-sm' : 'bg-card text-ink'
               }`}
             >
               {f}
@@ -79,22 +99,24 @@ export default function AllTasks({ tasks, onAdd, onComplete, onUncomplete, onDel
       </div>
 
       {/* Tasks */}
-      <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-5 pb-32 space-y-5">
         {groups.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-gray-400 font-medium">No tasks found</p>
-            <p className="text-gray-600 text-sm mt-1">Try a different search or filter</p>
+            <p className="font-display text-lg font-black text-ink">No tasks found</p>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/50 mt-2">
+              Try a different search or filter
+            </p>
           </div>
         )}
 
         {groups.map(([label, groupTasks]) => (
           <div key={label}>
-            <p className={`text-xs font-semibold uppercase tracking-widest mb-2 ${
-              label === 'Overdue' ? 'text-red-400' : 'text-gray-500'
-            }`}>
-              {label}
-            </p>
-            <div className="space-y-2">
+            <div className="flex items-center gap-2 px-1 mb-2">
+              <span className={`size-3 rounded-full border-2 border-ink ${TONES[label] || 'bg-sage'}`} />
+              <h2 className="font-display text-lg font-black text-ink">{label}</h2>
+              <span className="font-mono text-[10px] font-bold text-ink/40">{groupTasks.length}</span>
+            </div>
+            <div className="space-y-3">
               {groupTasks.map(task => (
                 <TaskItem
                   key={task.id}
@@ -108,16 +130,14 @@ export default function AllTasks({ tasks, onAdd, onComplete, onUncomplete, onDel
             </div>
           </div>
         ))}
-      </div>
 
-      {/* FAB */}
-      <div className="px-5 pb-4">
+        {/* Add button at bottom */}
         <button
           onClick={() => setShowModal(true)}
-          className="w-full bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 text-white font-semibold rounded-2xl py-4 flex items-center justify-center gap-2 transition-colors"
+          className="w-full bg-primary border-[3px] border-ink rounded-2xl py-4 flex items-center justify-center gap-2 shadow-sticker active:translate-y-0.5 active:shadow-sticker-sm transition-all"
         >
-          <Plus size={20} />
-          Add Task
+          <Plus size={18} className="text-ink" strokeWidth={3} />
+          <span className="font-mono text-xs font-bold uppercase tracking-widest text-ink">Add Task</span>
         </button>
       </div>
 

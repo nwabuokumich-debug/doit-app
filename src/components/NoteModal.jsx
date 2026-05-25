@@ -14,15 +14,21 @@ export default function NoteModal({ task, onClose, onUpdate }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm px-0 sm:px-4">
-      <div className="w-full sm:max-w-md bg-[#1a1a1a] rounded-t-3xl sm:rounded-2xl border border-white/5 p-6 pb-8">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/40 backdrop-blur-sm px-0 sm:px-4">
+      <div className="w-full sm:max-w-md bg-card rounded-t-3xl sm:rounded-3xl border-[3px] border-ink p-6 pb-8 shadow-sticker-lg">
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-xs text-gray-500 mb-0.5 flex items-center gap-1.5"><StickyNote size={11} /> Notes for</p>
-            <h2 className="text-base font-semibold text-white line-clamp-1">{task.title}</h2>
+          <div className="flex-1 min-w-0 mr-3">
+            <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/60 mb-1 flex items-center gap-1.5">
+              <StickyNote size={11} strokeWidth={2.5} /> Notes for
+            </p>
+            <h2 className="font-display text-lg font-black text-ink line-clamp-1">{task.title}</h2>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white p-1 ml-3 flex-shrink-0">
-            <X size={20} />
+          <button
+            onClick={onClose}
+            className="flex size-9 items-center justify-center rounded-xl border-[3px] border-ink bg-background active:translate-y-0.5 transition-all flex-shrink-0"
+            aria-label="Close"
+          >
+            <X size={16} className="text-ink" strokeWidth={2.5} />
           </button>
         </div>
 
@@ -32,13 +38,13 @@ export default function NoteModal({ task, onClose, onUpdate }) {
             onChange={e => setNote(e.target.value)}
             rows={5}
             autoFocus
-            className="w-full bg-[#252525] text-white rounded-xl px-4 py-3 text-sm outline-none border border-white/5 focus:border-indigo-500 transition-colors resize-none"
+            className="w-full bg-background text-ink rounded-xl px-4 py-3 text-sm outline-none border-[3px] border-ink resize-none"
             placeholder="Add notes, reflections, or anything about this task…"
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-xl py-3 text-sm transition-colors disabled:opacity-50"
+            className="w-full bg-primary border-[3px] border-ink text-ink font-mono text-xs font-bold uppercase tracking-widest rounded-xl py-3 shadow-sticker active:translate-y-0.5 active:shadow-sticker-sm transition-all disabled:opacity-50"
           >
             {loading ? 'Saving…' : 'Save Note'}
           </button>

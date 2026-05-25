@@ -14,22 +14,22 @@ function InlineCalendar({ selected, onSelect }) {
   const selectedDate = selected ? new Date(selected + 'T12:00') : null
 
   return (
-    <div className="bg-[#252525] rounded-2xl p-3 border border-white/5">
+    <div className="rounded-2xl border-[3px] border-ink bg-background p-3">
       {/* Month nav */}
       <div className="flex items-center justify-between mb-2">
-        <button type="button" onClick={() => setViewMonth(m => subMonths(m, 1))} className="text-gray-400 hover:text-white p-1">
-          <ChevronLeft size={16} />
+        <button type="button" onClick={() => setViewMonth(m => subMonths(m, 1))} className="flex size-8 items-center justify-center rounded-lg border-2 border-ink bg-card active:translate-y-0.5 transition-all">
+          <ChevronLeft size={14} className="text-ink" strokeWidth={2.5} />
         </button>
-        <p className="text-sm font-semibold text-white">{format(viewMonth, 'MMMM yyyy')}</p>
-        <button type="button" onClick={() => setViewMonth(m => addMonths(m, 1))} className="text-gray-400 hover:text-white p-1">
-          <ChevronRight size={16} />
+        <p className="font-display text-sm font-black text-ink">{format(viewMonth, 'MMMM yyyy')}</p>
+        <button type="button" onClick={() => setViewMonth(m => addMonths(m, 1))} className="flex size-8 items-center justify-center rounded-lg border-2 border-ink bg-card active:translate-y-0.5 transition-all">
+          <ChevronRight size={14} className="text-ink" strokeWidth={2.5} />
         </button>
       </div>
 
       {/* Day labels */}
       <div className="grid grid-cols-7 mb-1">
         {['S','M','T','W','T','F','S'].map((d, i) => (
-          <div key={i} className="text-center text-[10px] text-gray-600 font-medium py-0.5">{d}</div>
+          <div key={i} className="text-center font-mono text-[10px] font-bold text-ink/50 py-0.5">{d}</div>
         ))}
       </div>
 
@@ -50,14 +50,14 @@ function InlineCalendar({ selected, onSelect }) {
               type="button"
               onClick={() => !isPast && onSelect(format(day, 'yyyy-MM-dd'))}
               disabled={isPast}
-              className={`aspect-square flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
-                isSelected ? 'bg-indigo-500 text-white' :
-                todayFlag  ? 'bg-white/10 text-white' :
-                isPast     ? 'text-gray-700 cursor-not-allowed' :
-                             'text-gray-400 hover:bg-white/5'
+              className={`aspect-square flex items-center justify-center rounded-md font-display text-xs font-black transition-all border ${
+                isSelected ? 'bg-primary border-ink' :
+                todayFlag  ? 'border-ink/40' :
+                isPast     ? 'border-transparent text-ink/25 cursor-not-allowed' :
+                             'border-transparent hover:bg-ink/5'
               }`}
             >
-              {format(day, 'd')}
+              <span className={isPast ? 'text-ink/25' : 'text-ink'}>{format(day, 'd')}</span>
             </button>
           )
         })}
@@ -80,10 +80,10 @@ function TimePicker({ value, onChange, selectedDate }) {
   const isPM   = hour24 >= 12
   const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12
 
-  const isToday = selectedDate === format(now, 'yyyy-MM-dd')
+  const isTodayDate = selectedDate === format(now, 'yyyy-MM-dd')
 
   const isPastTime = (h24, m) => {
-    if (!isToday) return false
+    if (!isTodayDate) return false
     const t = new Date(); t.setHours(h24, m, 0, 0)
     return t <= now
   }
@@ -110,7 +110,6 @@ function TimePicker({ value, onChange, selectedDate }) {
     if (!isPastTime(h, minute)) setTime(h, minute)
   }
 
-  // Typing handlers
   const handleHourInput = (e) => {
     const raw = e.target.value.replace(/\D/g,'')
     setHourInput(raw)
@@ -136,10 +135,10 @@ function TimePicker({ value, onChange, selectedDate }) {
   const pastWarning = isPastTime(hour24, minute)
 
   return (
-    <div className={`bg-[#252525] rounded-2xl border p-3 flex items-center justify-center gap-3 ${pastWarning ? 'border-red-500/30' : 'border-white/5'}`}>
+    <div className={`rounded-2xl border-[3px] p-3 flex items-center justify-center gap-3 ${pastWarning ? 'border-destructive bg-destructive/10' : 'border-ink bg-background'}`}>
       {/* Hour */}
       <div className="flex flex-col items-center gap-1">
-        <button type="button" onClick={() => changeHour(1)} className="text-gray-500 hover:text-white p-1"><ChevronLeft size={14} className="rotate-90" /></button>
+        <button type="button" onClick={() => changeHour(1)} className="text-ink/50 hover:text-ink p-0.5"><ChevronLeft size={14} className="rotate-90" /></button>
         <input
           type="text"
           inputMode="numeric"
@@ -147,17 +146,17 @@ function TimePicker({ value, onChange, selectedDate }) {
           onChange={handleHourInput}
           onFocus={e => { setHourInput(''); e.target.select() }}
           onBlur={() => setHourInput('')}
-          className="text-2xl font-bold text-white w-10 text-center bg-transparent outline-none"
+          className="font-display text-2xl font-black text-ink w-10 text-center bg-transparent outline-none"
           maxLength={2}
         />
-        <button type="button" onClick={() => changeHour(-1)} className="text-gray-500 hover:text-white p-1"><ChevronLeft size={14} className="-rotate-90" /></button>
+        <button type="button" onClick={() => changeHour(-1)} className="text-ink/50 hover:text-ink p-0.5"><ChevronLeft size={14} className="-rotate-90" /></button>
       </div>
 
-      <span className="text-2xl font-bold text-gray-400">:</span>
+      <span className="font-display text-2xl font-black text-ink/40">:</span>
 
       {/* Minute */}
       <div className="flex flex-col items-center gap-1">
-        <button type="button" onClick={() => changeMinute(5)} className="text-gray-500 hover:text-white p-1"><ChevronLeft size={14} className="rotate-90" /></button>
+        <button type="button" onClick={() => changeMinute(5)} className="text-ink/50 hover:text-ink p-0.5"><ChevronLeft size={14} className="rotate-90" /></button>
         <input
           type="text"
           inputMode="numeric"
@@ -165,21 +164,19 @@ function TimePicker({ value, onChange, selectedDate }) {
           onChange={handleMinInput}
           onFocus={e => { setMinInput(''); e.target.select() }}
           onBlur={() => setMinInput('')}
-          className="text-2xl font-bold text-white w-10 text-center bg-transparent outline-none"
+          className="font-display text-2xl font-black text-ink w-10 text-center bg-transparent outline-none"
           maxLength={2}
         />
-        <button type="button" onClick={() => changeMinute(-5)} className="text-gray-500 hover:text-white p-1"><ChevronLeft size={14} className="-rotate-90" /></button>
+        <button type="button" onClick={() => changeMinute(-5)} className="text-ink/50 hover:text-ink p-0.5"><ChevronLeft size={14} className="-rotate-90" /></button>
       </div>
 
       {/* AM/PM */}
       <div className="flex flex-col gap-1 ml-1">
         <button type="button" onClick={() => isPM && toggleAmPm()}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${!isPM ? 'bg-indigo-500 text-white' : 'bg-white/5 text-gray-500 hover:text-gray-300'}`}>AM</button>
+          className={`px-3 py-1 rounded-lg border-2 border-ink font-mono text-[10px] font-bold transition-all ${!isPM ? 'bg-primary text-ink' : 'bg-card text-ink/50'}`}>AM</button>
         <button type="button" onClick={() => !isPM && toggleAmPm()}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isPM ? 'bg-indigo-500 text-white' : 'bg-white/5 text-gray-500 hover:text-gray-300'}`}>PM</button>
+          className={`px-3 py-1 rounded-lg border-2 border-ink font-mono text-[10px] font-bold transition-all ${isPM ? 'bg-primary text-ink' : 'bg-card text-ink/50'}`}>PM</button>
       </div>
-
-      {pastWarning && <p className="absolute mt-16 text-[10px] text-red-400">This time has passed</p>}
     </div>
   )
 }
@@ -190,7 +187,6 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
   const now = new Date()
   const { templates, saveTemplate, deleteTemplate } = useTemplates()
 
-  // Pre-fill from editTask if editing
   const initDate = isEdit && editTask.due_at
     ? format(new Date(editTask.due_at), 'yyyy-MM-dd')
     : defaultDate || format(now, 'yyyy-MM-dd')
@@ -244,10 +240,8 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
     }
   }
 
-  // Format selected date nicely
   const displayDate = due_date ? format(new Date(due_date + 'T12:00'), 'EEE, MMM d yyyy') : 'Pick a date'
 
-  // Format time for display
   const displayTime = () => {
     if (!due_time) return ''
     const [h, m] = due_time.split(':').map(Number)
@@ -257,18 +251,24 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm px-0 sm:px-4">
-      <div className="w-full sm:max-w-md bg-[#1a1a1a] rounded-t-3xl sm:rounded-2xl border border-white/5 p-6 pb-8 max-h-[92dvh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/40 backdrop-blur-sm px-0 sm:px-4">
+      <div className="w-full sm:max-w-md bg-card rounded-t-3xl sm:rounded-3xl border-[3px] border-ink p-6 pb-8 max-h-[92dvh] overflow-y-auto shadow-sticker-lg">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-white">{isEdit ? 'Edit Task' : 'New Task'}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white p-1"><X size={20} /></button>
+          <h2 className="font-display text-xl font-black text-ink">{isEdit ? 'Edit Task' : 'New Task'}</h2>
+          <button
+            onClick={onClose}
+            className="flex size-9 items-center justify-center rounded-xl border-[3px] border-ink bg-background active:translate-y-0.5 transition-all"
+            aria-label="Close"
+          >
+            <X size={16} className="text-ink" strokeWidth={2.5} />
+          </button>
         </div>
 
-        {/* Templates row — only show when adding, not editing */}
+        {/* Templates row */}
         {!isEdit && templates.length > 0 && (
           <div className="mb-4">
-            <p className="text-[10px] text-gray-600 uppercase tracking-widest mb-2">Templates</p>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/50 mb-2">Templates</p>
             <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
               {templates.map(t => {
                 const level = LEVELS.find(l => l.value === t.priority)
@@ -277,17 +277,18 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
                     <button
                       type="button"
                       onClick={() => { setTitle(t.title); setDescription(t.description); setPriority(t.priority) }}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all active:scale-95 ${level.badge} ${level.ring}`}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 border-ink bg-card font-bold text-xs text-ink transition-all active:scale-95 shadow-sticker-sm"
                     >
-                      <span className={`w-1.5 h-1.5 rounded-full ${level.color}`} />
+                      <span className={`w-2 h-2 rounded-full border border-ink ${level.color}`} />
                       {t.title}
                     </button>
                     <button
                       type="button"
                       onClick={() => deleteTemplate(t.id)}
-                      className="text-gray-700 hover:text-red-400 transition-colors flex-shrink-0"
+                      className="text-ink/30 hover:text-destructive transition-colors flex-shrink-0"
+                      aria-label="Delete template"
                     >
-                      <X size={12} />
+                      <X size={12} strokeWidth={2.5} />
                     </button>
                   </div>
                 )
@@ -296,7 +297,7 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
           </div>
         )}
 
-        <form onSubmit={handle} className="space-y-4">
+        <form onSubmit={handle} className="space-y-3">
           <div className="relative">
             <input
               type="text"
@@ -304,7 +305,7 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
               onChange={e => setTitle(e.target.value)}
               required
               autoFocus
-              className="w-full bg-[#252525] text-white rounded-xl px-4 py-3 pr-10 text-sm outline-none border border-white/5 focus:border-indigo-500 transition-colors"
+              className="w-full bg-background text-ink rounded-xl px-4 py-3 pr-10 text-sm font-medium outline-none border-[3px] border-ink"
               placeholder="What do you need to do?"
             />
             {!isEdit && (
@@ -314,16 +315,16 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
                 disabled={!title.trim()}
                 className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${
                   templates.some(t => t.title === title.trim() && t.priority === priority)
-                    ? 'text-indigo-400'
+                    ? 'text-ink'
                     : title.trim()
-                      ? 'text-gray-500 hover:text-indigo-400'
-                      : 'text-gray-800'
+                      ? 'text-ink/50 hover:text-ink'
+                      : 'text-ink/20'
                 }`}
                 title="Save as template"
               >
                 {templates.some(t => t.title === title.trim() && t.priority === priority)
-                  ? <BookmarkCheck size={16} />
-                  : <Bookmark size={16} />
+                  ? <BookmarkCheck size={16} strokeWidth={2.5} />
+                  : <Bookmark size={16} strokeWidth={2.5} />
                 }
               </button>
             )}
@@ -333,14 +334,14 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
             value={description}
             onChange={e => setDescription(e.target.value)}
             rows={2}
-            className="w-full bg-[#252525] text-white rounded-xl px-4 py-3 text-sm outline-none border border-white/5 focus:border-indigo-500 transition-colors resize-none"
+            className="w-full bg-background text-ink rounded-xl px-4 py-3 text-sm outline-none border-[3px] border-ink resize-none"
             placeholder="Notes (optional)"
           />
 
           {/* Date */}
           <div>
-            <label className="text-xs text-gray-400 mb-2 flex items-center gap-1.5">
-              <CalendarDays size={12} /> Date — {displayDate}
+            <label className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/60 mb-2 flex items-center gap-1.5">
+              <CalendarDays size={11} strokeWidth={2.5} /> Date · {displayDate}
             </label>
             <InlineCalendar selected={due_date} onSelect={setDueDate} />
           </div>
@@ -350,17 +351,17 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
             <button
               type="button"
               onClick={handleToggleTime}
-              className={`flex items-center gap-2 text-sm font-medium transition-colors ${showTime ? 'text-indigo-400' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-widest transition-colors ${showTime ? 'text-ink' : 'text-ink/50 hover:text-ink'}`}
             >
-              <Clock size={14} />
-              {showTime ? `Deadline set — ${displayTime()}` : 'Add deadline (optional)'}
+              <Clock size={12} strokeWidth={2.5} />
+              {showTime ? `Deadline · ${displayTime()}` : 'Add deadline (optional)'}
             </button>
 
             {showTime && (
               <div className="mt-2">
                 <TimePicker value={due_time} onChange={setDueTime} selectedDate={due_date} />
-                <p className="text-[10px] text-gray-600 mt-1.5 px-1">
-                  Complete before this time for a score bonus · miss it for a penalty
+                <p className="font-mono text-[10px] font-bold text-ink/50 mt-1.5 px-1">
+                  Complete before this time for a bonus · miss it for a penalty
                 </p>
               </div>
             )}
@@ -369,9 +370,9 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
           {/* Level */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs text-gray-400">Class</label>
-              <span className={`text-xs font-semibold ${selected.text}`}>
-                Level {selected.num} — {selected.label} · {selected.points} pts
+              <label className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/60">Class</label>
+              <span className="font-display text-xs font-black text-ink">
+                L{selected.num} · {selected.label} · {selected.points}pt
               </span>
             </div>
             <div className="flex gap-1.5">
@@ -380,32 +381,31 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
                   key={l.value}
                   type="button"
                   onClick={() => setPriority(l.value)}
-                  className={`flex-1 flex flex-col items-center py-2.5 rounded-xl border transition-all ${
-                    priority === l.value ? `${l.badge} ${l.ring} border` : 'bg-[#252525] border-white/5 text-gray-600'
+                  className={`flex-1 flex flex-col items-center py-2 rounded-xl border-[3px] transition-all ${
+                    priority === l.value
+                      ? `border-ink ${l.color} shadow-sticker-sm`
+                      : 'border-ink/20 bg-card'
                   }`}
                 >
-                  <span className="text-xs font-bold">{l.num}</span>
-                  <span className={`text-[9px] mt-0.5 font-medium ${priority === l.value ? '' : 'text-gray-700'}`}>{l.short}</span>
+                  <span className={`font-display text-sm font-black ${priority === l.value ? 'text-ink' : 'text-ink/60'}`}>
+                    {l.num}
+                  </span>
+                  <span className={`font-mono text-[9px] font-bold mt-0.5 ${priority === l.value ? 'text-ink' : 'text-ink/40'}`}>
+                    {l.short}
+                  </span>
                 </button>
-              ))}
-            </div>
-            <div className="flex justify-between mt-1.5 px-0.5">
-              {LEVELS.map(l => (
-                <span key={l.value} className={`flex-1 text-center text-[9px] ${priority === l.value ? selected.text : 'text-gray-700'}`}>
-                  {l.points}
-                </span>
               ))}
             </div>
           </div>
 
-          {error && <p className="text-red-400 text-xs">{error}</p>}
+          {error && <p className="font-mono text-xs font-bold text-destructive">{error}</p>}
 
           <button
             type="submit"
             disabled={loading || !title.trim()}
-            className="w-full bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition-colors disabled:opacity-50"
+            className="w-full bg-primary border-[3px] border-ink text-ink font-mono text-xs font-bold uppercase tracking-widest rounded-xl py-3 shadow-sticker active:translate-y-0.5 active:shadow-sticker-sm transition-all disabled:opacity-50"
           >
-            {loading ? 'Saving…' : isEdit ? 'Save Changes' : `Add Task · ${selected.points}${showTime ? ` +${selected.timeBonus} possible` : ''} pts`}
+            {loading ? 'Saving…' : isEdit ? 'Save Changes' : `Add Task · ${selected.points}${showTime ? `+${selected.timeBonus}` : ''} pts`}
           </button>
         </form>
       </div>

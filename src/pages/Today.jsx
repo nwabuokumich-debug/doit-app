@@ -170,29 +170,45 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
   const weekDays = eachDayOfInterval({ start: weekStart, end: endOfWeek(weekStart) })
 
   return (
-    <div className="flex flex-col h-full relative">
+    <div className="flex flex-col h-full relative bg-background">
       {/* Header */}
-      <div className="px-5 pt-4 pb-2">
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-xs text-gray-500 uppercase tracking-widest">{format(selectedDate, 'MMMM yyyy')}</p>
-          <button onClick={() => setShowCalendar(true)} className="text-gray-400 hover:text-white transition-colors">
-            <CalendarDays size={18} />
+      <div className="px-5 pt-5 pb-2">
+        <div className="flex items-center justify-between mb-2">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-ink/60 font-bold">
+            {format(selectedDate, 'MMMM yyyy')}
+          </p>
+          <button
+            onClick={() => setShowCalendar(true)}
+            className="flex size-10 items-center justify-center rounded-xl border-[3px] border-ink bg-card shadow-sticker-sm active:translate-y-0.5 active:shadow-none transition-all"
+            aria-label="Open calendar"
+          >
+            <CalendarDays size={16} className="text-ink" strokeWidth={2.5} />
           </button>
         </div>
 
         {/* Day nav */}
-        <div className="flex items-center justify-between">
-          <button onClick={() => onDateChange(subDays(selectedDate, 1))} className="text-gray-400 hover:text-white p-1 -ml-1">
-            <ChevronLeft size={22} />
+        <div className="flex items-center justify-between gap-2">
+          <button
+            onClick={() => onDateChange(subDays(selectedDate, 1))}
+            className="flex size-10 items-center justify-center rounded-xl border-[3px] border-ink bg-card shadow-sticker-sm active:translate-y-0.5 active:shadow-none transition-all"
+            aria-label="Previous day"
+          >
+            <ChevronLeft size={18} className="text-ink" strokeWidth={2.5} />
           </button>
-          <h1 className="text-xl font-bold text-white">{dayLabel(selectedDate)}</h1>
-          <button onClick={() => onDateChange(addDays(selectedDate, 1))} className="text-gray-400 hover:text-white p-1 -mr-1">
-            <ChevronRight size={22} />
+          <h1 className="font-display text-2xl font-black text-ink leading-none">
+            {dayLabel(selectedDate)}
+          </h1>
+          <button
+            onClick={() => onDateChange(addDays(selectedDate, 1))}
+            className="flex size-10 items-center justify-center rounded-xl border-[3px] border-ink bg-card shadow-sticker-sm active:translate-y-0.5 active:shadow-none transition-all"
+            aria-label="Next day"
+          >
+            <ChevronRight size={18} className="text-ink" strokeWidth={2.5} />
           </button>
         </div>
 
-        {/* Week strip — slim pills */}
-        <div className="flex gap-1 mt-2">
+        {/* Week strip */}
+        <div className="flex gap-1.5 mt-3">
           {weekDays.map(day => {
             const isSelected = isSameDay(day, selectedDate)
             const todayFlag = isToday(day)
@@ -201,26 +217,35 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
             const hasTasks = possible > 0
             const pctDay = hasTasks ? (earned / possible) * 100 : 0
 
+            const bg = isSelected
+              ? 'bg-primary'
+              : todayFlag
+                ? 'bg-accent'
+                : isPastDay
+                  ? 'bg-card/60'
+                  : 'bg-card'
+
             return (
               <button
                 key={day.toISOString()}
                 onClick={() => onDateChange(day)}
-                className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition-all ${
-                  isSelected && isPastDay ? 'bg-white/10' :
-                  isSelected             ? 'bg-indigo-500' :
-                  todayFlag              ? 'bg-white/10' :
-                  isPastDay              ? 'bg-[#141414]' : 'bg-[#1a1a1a]'
+                className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl border-2 border-ink transition-all ${bg} ${
+                  isSelected ? 'shadow-sticker-sm' : ''
                 }`}
               >
-                <span className={`text-xs font-semibold ${
-                  isSelected ? 'text-white' : isPastDay ? 'text-gray-600' : 'text-gray-400'
-                }`}>
-                  {format(day, 'EEE')[0]}{format(day, 'd')}
+                <span className="font-mono text-[9px] font-bold uppercase tracking-widest text-ink/70">
+                  {format(day, 'EEE')[0]}
+                </span>
+                <span className="font-display text-sm font-black text-ink leading-none">
+                  {format(day, 'd')}
                 </span>
                 {hasTasks && (
-                  <span className="w-1 h-1 rounded-full flex-shrink-0" style={{
-                    backgroundColor: isSelected ? 'rgba(255,255,255,0.7)' :
-                      pctDay >= 80 ? '#22c55e' : pctDay >= 50 ? '#eab308' : '#ef4444'
+                  <span className="w-1.5 h-1.5 rounded-full" style={{
+                    backgroundColor: isSelected
+                      ? 'oklch(0.15 0 0)'
+                      : pctDay >= 80 ? 'oklch(0.6 0.18 145)'
+                      : pctDay >= 50 ? 'oklch(0.72 0.21 65)'
+                      : 'oklch(0.65 0.24 27)'
                   }} />
                 )}
               </button>
@@ -229,115 +254,115 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
         </div>
 
         {/* Collapsible section */}
-        <div className={`overflow-hidden transition-all duration-300 ${headerCollapsed ? 'max-h-0' : 'max-h-80'}`}>
+        <div className={`overflow-hidden transition-all duration-300 ${headerCollapsed ? 'max-h-0' : 'max-h-96'}`}>
           {/* Combo banner */}
           {combo && (() => {
             const p = combo.progress
-            const color = p > 0.66 ? '#f97316' : p > 0.33 ? '#eab308' : '#6b7280'
-            const bgColor = p > 0.66 ? 'rgba(249,115,22,0.08)' : p > 0.33 ? 'rgba(234,179,8,0.06)' : 'rgba(107,114,128,0.05)'
-            const borderColor = p > 0.66 ? 'rgba(249,115,22,0.35)' : p > 0.33 ? 'rgba(234,179,8,0.25)' : 'rgba(107,114,128,0.15)'
+            const tone = p > 0.66 ? 'bg-primary' : p > 0.33 ? 'bg-accent' : 'bg-card'
+            const label = p > 0.66 ? 'ON FIRE!' : p > 0.33 ? 'FADING…' : 'DYING OUT…'
             return (
-              <div
-                className="mt-3 flex items-center gap-3 px-4 py-3 rounded-2xl overflow-hidden relative transition-all duration-1000"
-                style={{ backgroundColor: bgColor, border: `1px solid ${borderColor}`, opacity: Math.max(0.45, p) }}
-              >
-                <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(to right, ${color}12, transparent)` }} />
-                {/* Chain count */}
-                <div className="flex flex-col items-center flex-shrink-0 z-10">
-                  <span className="text-2xl font-black leading-none" style={{ color }}>{combo.chainCount}</span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color }}>streak</span>
+              <div className={`mt-3 flex items-center gap-3 px-4 py-3 rounded-2xl border-[3px] border-ink shadow-sticker ${tone}`}>
+                <div className="flex size-10 items-center justify-center rounded-xl border-2 border-ink bg-card">
+                  <Flame size={18} className="text-ink" strokeWidth={2.5} />
                 </div>
-                <div className="w-px h-8 flex-shrink-0 z-10" style={{ backgroundColor: `${color}40` }} />
-                {/* Labels */}
-                <div className="flex flex-col z-10 flex-1">
-                  <span className="text-xs font-black tracking-widest uppercase leading-tight" style={{ color }}>
-                    {p > 0.66 ? 'On Fire!' : p > 0.33 ? 'Fading…' : 'Dying out…'}
-                  </span>
-                  <span className="text-[10px] text-gray-500 mt-0.5">Expires in {formatCountdown(combo.msRemaining)}</span>
+                <div className="flex-1">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="font-display text-2xl font-black text-ink leading-none">
+                      {combo.chainCount}
+                    </span>
+                    <span className="font-mono text-[9px] font-bold uppercase tracking-widest text-ink/70">
+                      streak
+                    </span>
+                  </div>
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink mt-1">
+                    {label} · {formatCountdown(combo.msRemaining)}
+                  </p>
                 </div>
-                {/* Progress bar */}
-                <div className="w-16 h-1.5 bg-white/5 rounded-full overflow-hidden z-10">
-                  <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${p * 100}%`, backgroundColor: color }} />
+                <div className="w-1.5 h-10 rounded-full bg-ink/15 overflow-hidden">
+                  <div className="w-full bg-ink rounded-full transition-all duration-1000" style={{ height: `${p * 100}%`, marginTop: `${(1 - p) * 100}%` }} />
                 </div>
               </div>
             )
           })()}
 
-          {/* Score bar — compact */}
-          <div className={`mt-3 rounded-xl px-4 py-2.5 border transition-all duration-500 ${
-            isPerfect
-              ? 'bg-gradient-to-br from-yellow-500/20 to-amber-500/10 border-yellow-500/30 perfect-pulse'
-              : 'bg-gradient-to-br from-indigo-500/20 to-purple-500/10 border-indigo-500/20'
+          {/* Score card */}
+          <div className={`mt-3 rounded-2xl border-[3px] border-ink p-4 transition-all ${
+            isPerfect ? 'bg-accent perfect-pulse' : 'bg-secondary shadow-sticker'
           }`}>
-            <div className="flex items-center gap-3">
-              <div className="flex items-baseline gap-1 flex-shrink-0">
-                <span className={`text-xl font-bold text-white ${scoreAnim ? 'score-pop' : ''}`}>
-                  {netEarned}
-                </span>
-                <span className="text-gray-500 text-xs">/ {score.possible}</span>
-                {score.deducted > 0 && (
-                  <span className="text-xs font-semibold text-red-400 ml-0.5">-{score.deducted}</span>
-                )}
-              </div>
-              <div className="flex-1 h-1.5 bg-black/30 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    isPerfect
-                      ? 'bg-gradient-to-r from-yellow-400 to-amber-500'
-                      : 'bg-gradient-to-r from-indigo-500 to-purple-500'
-                  }`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                {isPerfect ? (
-                  <span className="badge-pop text-xs font-extrabold px-2 py-0.5 rounded-full bg-yellow-400/20 text-yellow-300 tracking-wide">
-                    PERFECT
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/70">
+                  {isToday(selectedDate) ? "Today's Score" : isPast ? 'Final Score' : 'Day Score'}
+                </p>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <span className={`font-display text-4xl font-black text-ink leading-none ${scoreAnim ? 'score-pop' : ''}`}>
+                    {netEarned}
                   </span>
-                ) : (
-                  <>
-                    <Zap size={12} className="text-yellow-400" />
-                    <span className="text-sm font-bold text-yellow-400">{pct}%</span>
-                  </>
-                )}
+                  <span className="font-display text-lg font-black text-ink/40 leading-none">
+                    / {score.possible}
+                  </span>
+                  {score.deducted > 0 && (
+                    <span className="font-mono text-xs font-bold text-destructive ml-1">
+                      −{score.deducted}
+                    </span>
+                  )}
+                </div>
               </div>
+              {isPerfect ? (
+                <div className="badge-pop flex items-center gap-1 rounded-full border-2 border-ink bg-ink px-3 py-1">
+                  <span className="font-mono text-[10px] font-black uppercase tracking-widest text-accent">
+                    Perfect
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 rounded-full border-2 border-ink bg-card px-2.5 py-1">
+                  <Zap size={12} className="text-ink" strokeWidth={2.75} />
+                  <span className="font-mono text-xs font-bold text-ink">{pct}%</span>
+                </div>
+              )}
             </div>
-            <div className="flex justify-between text-[10px] text-gray-600 mt-1">
-              <span>{completed.length} done · {isPast ? 'sealed' : `${pending.length} left`}</span>
-              <span>{isToday(selectedDate) ? "Today's Score" : isPast ? 'Final Score' : 'Day Score'}</span>
+            <div className="mt-3 h-2 overflow-hidden rounded-full border-2 border-ink bg-card">
+              <div
+                className={`h-full ${isPerfect ? 'bg-ink' : 'bg-ink'}`}
+                style={{ width: `${pct}%` }}
+              />
             </div>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/60 mt-2">
+              {completed.length} done · {isPast ? 'sealed' : `${pending.length} left`}
+            </p>
           </div>
         </div>
 
         {/* Collapse toggle */}
         <button
           onClick={() => setHeaderCollapsed(c => !c)}
-          className="w-full flex items-center justify-center py-1 mt-1"
+          className="w-full flex items-center justify-center py-1.5 mt-1"
+          aria-label="Toggle header"
         >
-          <div className="flex items-center gap-1.5 text-gray-600 hover:text-gray-400 transition-colors">
-            <div className={`w-8 h-0.5 bg-gray-600 rounded-full`} />
-            <ChevronLeft size={12} className={`transition-transform duration-300 ${headerCollapsed ? '-rotate-90' : 'rotate-90'}`} />
-            <div className={`w-8 h-0.5 bg-gray-600 rounded-full`} />
+          <div className="flex items-center gap-1.5 text-ink/40">
+            <div className="w-8 h-0.5 bg-ink/30 rounded-full" />
+            <ChevronLeft size={12} className={`transition-transform duration-300 ${headerCollapsed ? '-rotate-90' : 'rotate-90'}`} strokeWidth={2.5} />
+            <div className="w-8 h-0.5 bg-ink/30 rounded-full" />
           </div>
         </button>
 
         {/* View toggle */}
-        <div className="flex gap-1 bg-[#141414] rounded-xl p-1">
+        <div className="flex gap-1.5 mt-1">
           <button
             onClick={() => setView('tasks')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
-              view === 'tasks' ? 'bg-[#1a1a1a] text-white' : 'text-gray-600'
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border-[3px] border-ink font-mono text-[10px] font-bold uppercase tracking-widest transition-all ${
+              view === 'tasks' ? 'bg-ink text-background shadow-sticker-sm' : 'bg-card text-ink'
             }`}
           >
-            <LayoutList size={13} /> Tasks
+            <LayoutList size={12} strokeWidth={2.5} /> Tasks
           </button>
           <button
             onClick={() => setView('timeline')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
-              view === 'timeline' ? 'bg-[#1a1a1a] text-white' : 'text-gray-600'
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border-[3px] border-ink font-mono text-[10px] font-bold uppercase tracking-widest transition-all ${
+              view === 'timeline' ? 'bg-ink text-background shadow-sticker-sm' : 'bg-card text-ink'
             }`}
           >
-            <Clock3 size={13} /> Timeline
+            <Clock3 size={12} strokeWidth={2.5} /> Timeline
           </button>
         </div>
       </div>
@@ -353,19 +378,29 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
 
       {/* Task List */}
       {view === 'tasks' && (
-      <div className="flex-1 overflow-y-auto px-5 space-y-2 pb-4">
+      <div className="flex-1 overflow-y-auto px-5 pt-3 space-y-3 pb-32">
         {pending.length === 0 && completed.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-14 h-14 bg-[#1a1a1a] rounded-2xl flex items-center justify-center mb-3">
-              <Plus size={22} className="text-gray-600" />
+            <div className="size-16 rounded-2xl border-[3px] border-dashed border-ink/40 bg-card flex items-center justify-center mb-3">
+              <Plus size={24} className="text-ink/40" strokeWidth={2.5} />
             </div>
-            <p className="text-gray-500 font-medium">No tasks for {dayLabel(selectedDate).toLowerCase()}</p>
-            <p className="text-gray-700 text-sm mt-1">{isPast ? 'Nothing was planned this day' : 'Tap + to plan your day'}</p>
+            <p className="font-display text-lg font-black text-ink">
+              No tasks for {dayLabel(selectedDate).toLowerCase()}
+            </p>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/50 mt-1">
+              {isPast ? 'Nothing was planned' : 'Tap + to plan your day'}
+            </p>
           </div>
         )}
 
         {!isPast && pending.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-3">
+            <div className="flex items-end justify-between px-1">
+              <h2 className="font-display text-xl font-black text-ink">Today's Quests</h2>
+              <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-primary">
+                {pending.length} LEFT
+              </span>
+            </div>
             {pending.map(task => (
               <TaskItem key={task.id} task={task} onComplete={handleComplete} onUncomplete={handleUncomplete} onDelete={onDelete} onUpdate={onUpdate} multiplier={combo ? combo.chainCount : 0} />
             ))}
@@ -373,11 +408,13 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
         )}
 
         {completed.length > 0 && (
-          <div className={isPast ? '' : 'mt-4'}>
+          <div className={isPast ? '' : 'mt-5'}>
             {(!isPast || pending.length > 0) && (
-              <p className="text-xs text-gray-600 uppercase tracking-widest mb-2 px-1">Completed</p>
+              <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/50 mb-2 px-1">
+                Completed
+              </p>
             )}
-            <div className="space-y-2">
+            <div className="space-y-3">
               {completed.map(task => (
                 <TaskItem key={task.id} task={task} onComplete={handleComplete} onUncomplete={handleUncomplete} onDelete={onDelete} onUpdate={onUpdate} multiplier={1} locked={isPast} />
               ))}
@@ -386,9 +423,11 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
         )}
 
         {isPast && pending.length > 0 && (
-          <div className="mt-4">
-            <p className="text-xs text-red-500/70 uppercase tracking-widest mb-2 px-1">Uncompleted</p>
-            <div className="space-y-2">
+          <div className="mt-5">
+            <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-destructive mb-2 px-1">
+              Uncompleted
+            </p>
+            <div className="space-y-3">
               {pending.map(task => (
                 <TaskItem key={task.id} task={task} onComplete={handleComplete} onUncomplete={handleUncomplete} onDelete={onDelete} onUpdate={onUpdate} multiplier={1} locked={isPast} />
               ))}
@@ -399,17 +438,17 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
       )}
 
       {/* FAB — hidden for past days and timeline view */}
-      {/* Floating Add button */}
       {!isPast && view === 'tasks' && (
         <button
           onClick={() => setShowModal(true)}
-          className="fixed w-14 h-14 bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 text-white rounded-full shadow-lg shadow-indigo-500/30 flex items-center justify-center transition-all z-10"
+          className="fixed size-14 bg-primary border-[3px] border-ink rounded-full shadow-sticker flex items-center justify-center active:translate-y-0.5 active:shadow-sticker-sm transition-all z-40"
           style={{
-            bottom: 'calc(82px + max(12px, env(safe-area-inset-bottom)))',
+            bottom: 'calc(96px + max(14px, env(safe-area-inset-bottom)))',
             right: 'max(20px, calc(50vw - 204px))',
           }}
+          aria-label="Add task"
         >
-          <Plus size={24} />
+          <Plus size={26} className="text-ink" strokeWidth={3} />
         </button>
       )}
 

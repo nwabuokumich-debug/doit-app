@@ -22,8 +22,8 @@ export default function App() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-10 h-10 border-[3px] border-ink border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -71,7 +71,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-dvh max-w-md mx-auto bg-[#0f0f0f] overflow-hidden">
+    <div className="flex flex-col h-dvh max-w-md mx-auto bg-background overflow-hidden relative">
       <main className="flex-1 overflow-hidden flex flex-col">
         {renderPage()}
       </main>

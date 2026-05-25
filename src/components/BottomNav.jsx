@@ -1,60 +1,39 @@
 import { Home, ListTodo, Activity, BarChart2, User } from 'lucide-react'
 
 const TABS = [
-  { id: 'today', label: 'Today', icon: Home },
-  { id: 'tasks', label: 'Tasks', icon: ListTodo },
-  { id: 'activity', label: 'Activity', icon: Activity },
-  { id: 'analytics', label: 'Analytics', icon: BarChart2 },
-  { id: 'profile', label: 'Profile', icon: User },
+  { id: 'today',     label: 'Today',  icon: Home },
+  { id: 'tasks',     label: 'Tasks',  icon: ListTodo },
+  { id: 'activity',  label: 'Active', icon: Activity },
+  { id: 'analytics', label: 'Graph',  icon: BarChart2 },
+  { id: 'profile',   label: 'Me',     icon: User },
 ]
 
 export default function BottomNav({ active, onChange }) {
-  const activeIndex = TABS.findIndex(t => t.id === active)
-
   return (
-    <div className="px-4 pb-3 pt-1" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
-      <nav
-        className="relative flex items-center h-[58px] rounded-[26px] px-1"
-        style={{
-          background: 'rgba(30, 30, 30, 0.65)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          border: '0.5px solid rgba(255, 255, 255, 0.12)',
-          boxShadow: '0 8px 40px rgba(0, 0, 0, 0.35), inset 0 0.5px 0 rgba(255, 255, 255, 0.08)',
-        }}
-      >
-        {/* Sliding glass pill */}
-        <div
-          className="absolute h-[42px] rounded-[20px] transition-all duration-300 ease-out"
-          style={{
-            width: `calc(${100 / TABS.length}% - 4px)`,
-            left: `calc(${activeIndex * (100 / TABS.length)}% + 2px)`,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            background: 'linear-gradient(to bottom, rgba(99,102,241,0.35), rgba(99,102,241,0.15))',
-            border: '0.5px solid rgba(129,140,248,0.3)',
-            boxShadow: '0 2px 12px rgba(99,102,241,0.2), inset 0 0.5px 0 rgba(165,180,252,0.2)',
-          }}
-        />
-
+    <div
+      className="absolute inset-x-0 bottom-0 z-50 flex justify-center px-4"
+      style={{ paddingBottom: 'max(14px, env(safe-area-inset-bottom))' }}
+    >
+      <nav className="flex h-16 w-full max-w-[400px] items-center justify-between rounded-full border-[3px] border-ink bg-ink px-3 shadow-sticker-lg">
         {TABS.map(({ id, label, icon: Icon }) => {
           const isActive = active === id
           return (
             <button
               key={id}
               onClick={() => onChange(id)}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 relative z-10 py-2"
+              className="flex flex-1 items-center justify-center"
+              aria-label={label}
             >
-              <Icon
-                size={21}
-                strokeWidth={isActive ? 2.2 : 1.5}
-                className={`transition-colors duration-200 ${isActive ? 'text-indigo-300' : 'text-[#666]'}`}
-              />
-              <span
-                className={`text-[9px] font-medium transition-colors duration-200 ${isActive ? 'text-indigo-300' : 'text-[#555]'}`}
-              >
-                {label}
-              </span>
+              {isActive ? (
+                <div className="flex items-center gap-1.5 rounded-full border-[3px] border-ink bg-accent px-3 py-1.5 shadow-sticker-sm">
+                  <Icon className="size-4 text-ink" strokeWidth={2.75} />
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink">
+                    {label}
+                  </span>
+                </div>
+              ) : (
+                <Icon className="size-5 text-white/55" strokeWidth={2.25} />
+              )}
             </button>
           )
         })}
