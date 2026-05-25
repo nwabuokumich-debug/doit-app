@@ -1,16 +1,65 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { format } from 'date-fns'
-import { Trash2, Timer, Pencil, StickyNote, Check } from 'lucide-react'
+import { Trash2, Timer, Pencil, StickyNote, Check, Star } from 'lucide-react'
 import { isLate, isOnTime, earnedPoints, missedPoints } from '../hooks/useTasks'
 import { getLevel } from '../lib/levels'
 import AddTaskModal from './AddTaskModal'
 import NoteModal from './NoteModal'
+
+const CONFETTI_COLORS = [
+  'oklch(0.72 0.21 25)',   // coral
+  'oklch(0.78 0.14 275)',  // periwinkle
+  'oklch(0.85 0.18 95)',   // mustard
+  'oklch(0.86 0.09 145)',  // sage
+  'oklch(0.15 0 0)',       // ink
+]
+
+function ConfettiBurst() {
+  const pieces = useRef(
+    Array.from({ length: 14 }, (_, i) => {
+      const angle = (i / 14) * Math.PI * 2 + Math.random() * 0.5
+      const distance = 60 + Math.random() * 50
+      return {
+        id: i,
+        cx: Math.cos(angle) * distance,
+        cy: Math.sin(angle) * distance - 20,
+        cr: (Math.random() - 0.5) * 720,
+        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+        shape: i % 3,
+        size: 8 + Math.random() * 6,
+      }
+    })
+  ).current
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[9998] overflow-visible">
+      {pieces.map(p => (
+        <span
+          key={p.id}
+          className="confetti-piece absolute left-1/2 top-1/2"
+          style={{
+            '--cx': `${p.cx}px`,
+            '--cy': `${p.cy}px`,
+            '--cr': `${p.cr}deg`,
+            width: `${p.size}px`,
+            height: `${p.size}px`,
+            backgroundColor: p.color,
+            border: '2px solid oklch(0.15 0 0)',
+            borderRadius: p.shape === 0 ? '50%' : p.shape === 1 ? '0' : '20%',
+            transform: 'translate(-50%, -50%)',
+          }}
+        />
+      ))}
+    </div>
+  )
+}
 
 export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onUpdate, multiplier = 1, locked = false }) {
   const [showEdit, setShowEdit] = useState(false)
   const [showNote, setShowNote] = useState(false)
   const [animating, setAnimating] = useState(false)
   const [showFloat, setShowFloat] = useState(false)
+  const [celebrate, setCelebrate] = useState(false)
 
   const handleToggle = async () => {
     if (animating || locked) return
@@ -19,8 +68,10 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
       await onUncomplete(task.id)
     } else {
       setShowFloat(true)
+      setCelebrate(true)
       await onComplete(task.id)
-      setTimeout(() => setShowFloat(false), 900)
+      setTimeout(() => setShowFloat(false), 1100)
+      setTimeout(() => setCelebrate(false), 700)
     }
     setTimeout(() => setAnimating(false), 400)
   }
@@ -38,9 +89,13 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
       ? 'border-ink bg-destructive/15 shadow-sticker'
       : 'border-ink bg-card shadow-sticker'
 
+  const totalPts = task.points + multiplier
+
   return (
     <>
-    <div className={`task-enter flex items-start gap-3 p-3.5 rounded-2xl border-[3px] transition-all ${cardClass}`}>
+    <div className={`task-enter relative flex items-start gap-3 p-3.5 rounded-2xl border-[3px] transition-all ${cardClass} ${celebrate ? 'card-celebrate' : ''}`}>
+      {celebrate && <span className="ring-burst" />}
+      {celebrate && <ConfettiBurst />}
       {/* Checkbox tile — also shows priority color */}
       <button
         onClick={handleToggle}
@@ -147,9 +202,13 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
       />
     )}
     {showFloat && (
-      <div className="float-points pointer-events-none fixed left-1/2 top-1/3 -translate-x-1/2 z-[9999]">
-        <span className="font-display text-xl font-black text-ink drop-shadow-[2px_2px_0_oklch(0.85_0.18_95)]">
-          +{task.points + multiplier} pts{multiplier > 0 ? ` (+${multiplier} combo)` : ''}
+      <div className="float-badge pointer-events-none fixed left-1/2 top-1/3 z-[9999] flex items-center gap-2 rounded-2xl border-[3px] border-ink bg-accent px-4 py-2 shadow-sticker-lg">
+        <Star size={20} className="text-ink" strokeWidth={2.75} fill="currentColor" />
+        <span className="font-display text-2xl font-black text-ink leading-none tabular-nums">
+          +{totalPts}
+        </span>
+        <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/70">
+          {multiplier > 0 ? `×${multiplier} combo` : 'pts'}
         </span>
       </div>
     )}

@@ -254,82 +254,114 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
         </div>
 
         {/* Collapsible section */}
-        <div className={`overflow-hidden transition-all duration-300 ${headerCollapsed ? 'max-h-0' : 'max-h-96'}`}>
-          {/* Combo banner */}
+        <div className={`overflow-hidden transition-all duration-300 ${headerCollapsed ? 'max-h-0' : 'max-h-[28rem]'}`}>
+          {/* Combo banner — slim, with live bottom progress bar */}
           {combo && (() => {
             const p = combo.progress
-            const tone = p > 0.66 ? 'bg-primary' : p > 0.33 ? 'bg-accent' : 'bg-card'
+            const tone = p > 0.66 ? 'bg-primary' : p > 0.33 ? 'bg-accent' : 'bg-sage'
             const label = p > 0.66 ? 'ON FIRE!' : p > 0.33 ? 'FADING…' : 'DYING OUT…'
             return (
-              <div className={`mt-3 flex items-center gap-3 px-4 py-3 rounded-2xl border-[3px] border-ink shadow-sticker ${tone}`}>
-                <div className="flex size-10 items-center justify-center rounded-xl border-2 border-ink bg-card">
-                  <Flame size={18} className="text-ink" strokeWidth={2.5} />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="font-display text-2xl font-black text-ink leading-none">
-                      {combo.chainCount}
+              <div className={`mt-3 rounded-2xl border-[3px] border-ink overflow-hidden shadow-sticker ${tone}`}>
+                <div className="flex items-center gap-3 px-3 py-2.5">
+                  <div className="flex size-9 items-center justify-center rounded-xl border-2 border-ink bg-card">
+                    <Flame size={16} className="text-ink" strokeWidth={2.75} />
+                  </div>
+                  <div className="flex-1 flex items-baseline gap-1.5">
+                    <span className="font-display text-xl font-black text-ink leading-none">
+                      ×{combo.chainCount}
                     </span>
-                    <span className="font-mono text-[9px] font-bold uppercase tracking-widest text-ink/70">
-                      streak
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink">
+                      {label}
                     </span>
                   </div>
-                  <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink mt-1">
-                    {label} · {formatCountdown(combo.msRemaining)}
-                  </p>
+                  <span className="font-mono text-xs font-bold tabular-nums text-ink">
+                    {formatCountdown(combo.msRemaining)}
+                  </span>
                 </div>
-                <div className="w-1.5 h-10 rounded-full bg-ink/15 overflow-hidden">
-                  <div className="w-full bg-ink rounded-full transition-all duration-1000" style={{ height: `${p * 100}%`, marginTop: `${(1 - p) * 100}%` }} />
+                <div className="h-1.5 bg-ink/15">
+                  <div className="h-full bg-ink transition-all duration-1000" style={{ width: `${p * 100}%` }} />
                 </div>
               </div>
             )
           })()}
 
-          {/* Score card */}
-          <div className={`mt-3 rounded-2xl border-[3px] border-ink p-4 transition-all ${
-            isPerfect ? 'bg-accent perfect-pulse' : 'bg-secondary shadow-sticker'
-          }`}>
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/70">
-                  {isToday(selectedDate) ? "Today's Score" : isPast ? 'Final Score' : 'Day Score'}
-                </p>
-                <div className="flex items-baseline gap-1.5 mt-1">
-                  <span className={`font-display text-4xl font-black text-ink leading-none ${scoreAnim ? 'score-pop' : ''}`}>
-                    {netEarned}
-                  </span>
-                  <span className="font-display text-lg font-black text-ink/40 leading-none">
-                    / {score.possible}
-                  </span>
-                  {score.deducted > 0 && (
-                    <span className="font-mono text-xs font-bold text-destructive ml-1">
-                      −{score.deducted}
-                    </span>
+          {/* Score card — hero, celebrates bonus over 100% */}
+          {(() => {
+            const overflow = Math.max(0, netEarned - score.possible)
+            const isBonus  = overflow > 0
+            const baseWidth = score.possible > 0 ? Math.min(100, (netEarned / score.possible) * 100) : 0
+            const overflowMax = score.possible > 0 ? Math.min(100, (overflow / score.possible) * 100) : 0
+            const heroBg = isBonus ? 'bg-accent bonus-pulse' : isPerfect ? 'bg-accent perfect-pulse' : 'bg-secondary shadow-sticker'
+
+            return (
+              <div className={`mt-3 rounded-2xl border-[3px] border-ink p-4 transition-all ${heroBg}`}>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/70">
+                      {isToday(selectedDate) ? "Today's Score" : isPast ? 'Final Score' : 'Day Score'}
+                    </p>
+                    <div className="flex items-baseline gap-1.5 mt-1">
+                      <span className={`font-display text-4xl font-black text-ink leading-none ${scoreAnim ? 'score-pop' : ''}`}>
+                        {netEarned}
+                      </span>
+                      <span className="font-display text-lg font-black text-ink/40 leading-none">
+                        / {score.possible}
+                      </span>
+                      {isBonus && (
+                        <span className="badge-pop ml-1 font-mono text-[10px] font-black uppercase tracking-widest text-ink px-1.5 py-0.5 rounded border-2 border-ink bg-card">
+                          +{overflow}
+                        </span>
+                      )}
+                      {score.deducted > 0 && (
+                        <span className="font-mono text-xs font-bold text-destructive ml-1">
+                          −{score.deducted}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {isBonus ? (
+                    <div className="badge-pop flex items-center gap-1 rounded-full border-2 border-ink bg-ink px-3 py-1">
+                      <Flame size={11} className="text-primary" strokeWidth={2.75} fill="currentColor" />
+                      <span className="font-mono text-[10px] font-black uppercase tracking-widest text-primary">
+                        Bonus
+                      </span>
+                    </div>
+                  ) : isPerfect ? (
+                    <div className="badge-pop flex items-center gap-1 rounded-full border-2 border-ink bg-ink px-3 py-1">
+                      <span className="font-mono text-[10px] font-black uppercase tracking-widest text-accent">
+                        Perfect
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 rounded-full border-2 border-ink bg-card px-2.5 py-1">
+                      <Zap size={12} className="text-ink" strokeWidth={2.75} />
+                      <span className="font-mono text-xs font-bold text-ink">{pct}%</span>
+                    </div>
                   )}
                 </div>
+                {/* Progress bar — black base, coral overlay on the right when over 100% */}
+                <div className="mt-3 h-3 overflow-hidden rounded-full border-2 border-ink bg-card relative">
+                  <div className="absolute inset-y-0 left-0 bg-ink transition-all duration-500" style={{ width: `${baseWidth}%` }} />
+                  {isBonus && (
+                    <div
+                      className="absolute inset-y-0 right-0 bg-primary border-l-2 border-ink transition-all duration-500"
+                      style={{ width: `${overflowMax}%` }}
+                    />
+                  )}
+                </div>
+                <div className="mt-2 flex items-center justify-between font-mono text-[10px] font-bold uppercase tracking-widest text-ink/60">
+                  <span>{completed.length} done · {isPast ? 'sealed' : `${pending.length} left`}</span>
+                  {isBonus && <span className="text-ink">+{overflow} bonus pts</span>}
+                </div>
               </div>
-              {isPerfect ? (
-                <div className="badge-pop flex items-center gap-1 rounded-full border-2 border-ink bg-ink px-3 py-1">
-                  <span className="font-mono text-[10px] font-black uppercase tracking-widest text-accent">
-                    Perfect
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1 rounded-full border-2 border-ink bg-card px-2.5 py-1">
-                  <Zap size={12} className="text-ink" strokeWidth={2.75} />
-                  <span className="font-mono text-xs font-bold text-ink">{pct}%</span>
-                </div>
-              )}
-            </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full border-2 border-ink bg-card">
-              <div
-                className={`h-full ${isPerfect ? 'bg-ink' : 'bg-ink'}`}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-            <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/60 mt-2">
-              {completed.length} done · {isPast ? 'sealed' : `${pending.length} left`}
-            </p>
+            )
+          })()}
+
+          {/* Stat chips row */}
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <StatChip label="Points" value={netEarned} bg="bg-primary" />
+            <StatChip label="Done" value={completed.length} bg="bg-secondary" />
+            <StatChip label="Rate" value={`${pct}%`} bg="bg-sage" />
           </div>
         </div>
 
@@ -468,6 +500,15 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
           getDailyScore={getDailyScore}
         />
       )}
+    </div>
+  )
+}
+
+function StatChip({ label, value, bg }) {
+  return (
+    <div className={`rounded-xl border-[3px] border-ink ${bg} px-3 py-2 shadow-sticker-sm`}>
+      <div className="font-display text-xl font-black text-ink leading-none">{value}</div>
+      <div className="font-mono mt-0.5 text-[9px] font-bold uppercase tracking-widest text-ink/70">{label}</div>
     </div>
   )
 }
