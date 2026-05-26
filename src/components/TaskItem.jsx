@@ -62,22 +62,37 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
     <div ref={cardRef} className={`task-enter relative flex items-start gap-3 p-3.5 rounded-2xl border-[3px] transition-all ${cardClass} ${cardPop ? 'card-celebrate' : ''}`}>
       {cardPop && <span className="ring-burst" />}
 
-      <button
-        onClick={handleToggle}
-        disabled={locked}
-        className={`mt-0.5 size-10 flex-shrink-0 flex items-center justify-center rounded-xl border-[3px] border-ink transition-all ${
-          animating ? 'pop-anim' : ''
-        } ${
-          task.completed
-            ? 'bg-ink'
-            : locked
-              ? `${level.color} opacity-40 cursor-default`
-              : level.color
-        } active:translate-y-0.5`}
-        aria-label={task.completed ? 'Mark incomplete' : 'Mark complete'}
-      >
-        {task.completed && <Check size={18} className="text-background" strokeWidth={3.5} />}
-      </button>
+      {/*
+        Real <input type="checkbox" switch> so iOS 18+ Safari triggers
+        the Taptic Engine on user tap. Spread the non-standard
+        `switch` attribute via an object so React passes it through.
+        Visual styling lives on the input itself; the Check icon
+        overlays it with pointer-events-none so taps reach the input.
+      */}
+      <label className={`mt-0.5 size-10 flex-shrink-0 relative ${animating ? 'pop-anim' : ''}`}>
+        <input
+          type="checkbox"
+          {...{ switch: '' }}
+          checked={!!task.completed}
+          onChange={handleToggle}
+          disabled={locked}
+          aria-label={task.completed ? 'Mark incomplete' : 'Mark complete'}
+          className={`appearance-none size-10 rounded-xl border-[3px] border-ink m-0 block transition-all active:translate-y-0.5 ${
+            task.completed
+              ? 'bg-ink cursor-pointer'
+              : locked
+                ? `${level.color} opacity-40 cursor-not-allowed`
+                : `${level.color} cursor-pointer`
+          }`}
+        />
+        {task.completed && (
+          <Check
+            size={18}
+            strokeWidth={3.5}
+            className="absolute inset-0 m-auto text-background pointer-events-none"
+          />
+        )}
+      </label>
 
       <div className="flex-1 min-w-0 pt-0.5">
         <p className={`text-[15px] font-bold leading-tight text-ink ${task.completed ? 'line-through text-ink/40' : ''}`}>
