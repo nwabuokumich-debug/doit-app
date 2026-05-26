@@ -1,50 +1,61 @@
 import { useState } from 'react'
-import { format, isToday, isTomorrow, isPast } from 'date-fns'
+import { format, isToday, isTomorrow, isBefore, startOfDay } from 'date-fns'
 import { Plus, Search } from 'lucide-react'
 import TaskItem from '../components/TaskItem'
 import AddTaskModal from '../components/AddTaskModal'
 
+// Only group tasks scheduled today or later (or with no date). Past days
+// are sealed and live in Today's day-nav / Analytics, not here.
 function groupTasks(tasks) {
+  const todayStart = startOfDay(new Date())
   const groups = {}
   tasks.forEach(task => {
     let label = 'No Date'
     if (task.due_at) {
       const d = new Date(task.due_at)
+      if (isBefore(startOfDay(d), todayStart)) return
       if (isToday(d)) label = 'Today'
       else if (isTomorrow(d)) label = 'Tomorrow'
-      else if (isPast(d)) label = 'Overdue'
       else label = format(d, 'EEEE, MMMM d')
     }
     if (!groups[label]) groups[label] = []
     groups[label].push(task)
   })
-  const order = ['Overdue', 'Today', 'Tomorrow']
+  const order = ['Today', 'Tomorrow']
   return Object.entries(groups).sort(([a], [b]) => {
     const ai = order.indexOf(a)
     const bi = order.indexOf(b)
     if (ai !== -1 && bi !== -1) return ai - bi
     if (ai !== -1) return -1
     if (bi !== -1) return 1
+    if (a === 'No Date') return 1
+    if (b === 'No Date') return -1
     return a.localeCompare(b)
   })
 }
 
-const TONES = { Overdue: 'bg-destructive', Today: 'bg-primary', Tomorrow: 'bg-accent' }
+const TONES = { Today: 'bg-primary', Tomorrow: 'bg-accent' }
+
+function isUpcomingTask(task) {
+  if (!task.due_at) return true
+  return !isBefore(startOfDay(new Date(task.due_at)), startOfDay(new Date()))
+}
 
 export default function AllTasks({ tasks, onAdd, onComplete, onUncomplete, onDelete, onUpdate }) {
   const [showModal, setShowModal] = useState(false)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all') // all | pending | done
 
-  const filtered = tasks.filter(t => {
+  const upcoming = tasks.filter(isUpcomingTask)
+  const filtered = upcoming.filter(t => {
     const matchSearch = t.title.toLowerCase().includes(search.toLowerCase())
     const matchFilter = filter === 'all' || (filter === 'pending' && !t.completed) || (filter === 'done' && t.completed)
     return matchSearch && matchFilter
   })
 
   const groups = groupTasks(filtered)
-  const pendingCount = tasks.filter(t => !t.completed).length
-  const overdueCount = tasks.filter(t => !t.completed && t.due_at && new Date(t.due_at) < new Date()).length
+  const activeCount = upcoming.filter(t => !t.completed).length
+  const todayCount  = upcoming.filter(t => t.due_at && isToday(new Date(t.due_at))).length
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -63,11 +74,11 @@ export default function AllTasks({ tasks, onAdd, onComplete, onUncomplete, onDel
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="rounded-2xl border-[3px] border-ink bg-card p-3 shadow-sticker-sm">
             <p className="font-mono text-[9px] font-bold uppercase tracking-widest text-ink/60">Active</p>
-            <p className="font-display text-3xl font-black text-ink leading-none mt-1">{pendingCount}</p>
+            <p className="font-display text-3xl font-black text-ink leading-none mt-1">{activeCount}</p>
           </div>
           <div className="rounded-2xl border-[3px] border-ink bg-accent p-3 shadow-sticker-sm">
-            <p className="font-mono text-[9px] font-bold uppercase tracking-widest text-ink">Overdue</p>
-            <p className="font-display text-3xl font-black text-ink leading-none mt-1">{overdueCount}</p>
+            <p className="font-mono text-[9px] font-bold uppercase tracking-widest text-ink">Today</p>
+            <p className="font-display text-3xl font-black text-ink leading-none mt-1">{todayCount}</p>
           </div>
         </div>
 
@@ -102,9 +113,14 @@ export default function AllTasks({ tasks, onAdd, onComplete, onUncomplete, onDel
       <div className="flex-1 overflow-y-auto px-5 pb-32 space-y-5">
         {groups.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="font-display text-lg font-black text-ink">No tasks found</p>
+            <div className="size-16 rounded-2xl border-[3px] border-dashed border-ink/40 bg-card flex items-center justify-center mb-3">
+              <Plus size={24} className="text-ink/40" strokeWidth={2.5} />
+            </div>
+            <p className="font-display text-lg font-black text-ink">
+              {upcoming.length === 0 ? 'Nothing planned' : 'No tasks match'}
+            </p>
             <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/50 mt-2">
-              Try a different search or filter
+              {upcoming.length === 0 ? 'Tap Add Task to start' : 'Try a different search or filter'}
             </p>
           </div>
         )}
