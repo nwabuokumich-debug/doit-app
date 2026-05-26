@@ -3,6 +3,7 @@ import { useAuth } from './hooks/useAuth'
 import { useTasks } from './hooks/useTasks'
 import Auth from './components/Auth'
 import BottomNav from './components/BottomNav'
+import CelebrationRoot from './components/CelebrationRoot'
 import Today from './pages/Today'
 import AllTasks from './pages/AllTasks'
 import Analytics from './pages/Analytics'
@@ -76,6 +77,7 @@ export default function App() {
         {renderPage()}
       </main>
       <BottomNav active={tab} onChange={setTab} />
+      <CelebrationRoot />
     </div>
   )
 }
