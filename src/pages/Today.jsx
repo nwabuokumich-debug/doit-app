@@ -1,9 +1,10 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import {
   format, addDays, subDays, isToday, isTomorrow, isYesterday, isBefore, startOfDay,
   startOfWeek, eachDayOfInterval, endOfWeek, isSameDay
 } from 'date-fns'
-import { Plus, Zap, ChevronLeft, ChevronRight, CalendarDays, LayoutList, Clock3, Flame } from 'lucide-react'
+import { Plus, Zap, ChevronLeft, ChevronRight, CalendarDays, LayoutList, Clock3, Flame, Trophy } from 'lucide-react'
 
 // Combo tier windows based on latest completed task's points
 function getTierWindow(pts) {
@@ -75,10 +76,14 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
   useEffect(() => {
     if (score.earned > prevEarned.current) {
       setScoreAnim(true)
-      setTimeout(() => setScoreAnim(false), 500)
+      setTimeout(() => setScoreAnim(false), 700)
     }
     prevEarned.current = score.earned
   }, [score.earned])
+
+  // ─── Milestone detection (perfect / bonus / day-done) ───────────────
+  const prevMilestone = useRef({ pct: 0, net: 0, possible: 0, pending: -1 })
+  const [milestone, setMilestone] = useState(null) // 'perfect' | 'bonus' | 'day-done'
 
   // Compute live combo state from task data
   const getComboState = () => {
@@ -164,6 +169,33 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
   const sortByPriority = arr => [...arr].sort((a, b) => b.points - a.points)
   const completed = sortByPriority(dayTasks.filter(t => t.completed))
   const pending = sortByPriority(dayTasks.filter(t => !t.completed))
+
+  // Milestone detection — only fires on today's view, transitioning state
+  useEffect(() => {
+    if (!isToday(selectedDate)) {
+      prevMilestone.current = { pct, net: netEarned, possible: score.possible, pending: pending.length }
+      return
+    }
+    const prev = prevMilestone.current
+    if (prev.pending === -1) {
+      prevMilestone.current = { pct, net: netEarned, possible: score.possible, pending: pending.length }
+      return
+    }
+    const justBonus = score.possible > 0 && netEarned > score.possible && prev.net <= prev.possible
+    const justPerfect = score.possible > 0 && pct >= 100 && prev.pct < 100 && !justBonus
+    const justDayDone = pending.length === 0 && prev.pending > 0 && completed.length > 0
+    if (justBonus) setMilestone('bonus')
+    else if (justPerfect) setMilestone('perfect')
+    else if (justDayDone) setMilestone('day-done')
+    prevMilestone.current = { pct, net: netEarned, possible: score.possible, pending: pending.length }
+  }, [pct, netEarned, score.possible, pending.length, completed.length, selectedDate])
+
+  useEffect(() => {
+    if (!milestone) return
+    navigator.vibrate?.([60, 80, 80, 80, 100])
+    const t = setTimeout(() => setMilestone(null), 1900)
+    return () => clearTimeout(t)
+  }, [milestone])
 
   // Week strip: 7 days centred on selected date
   const weekStart = startOfWeek(selectedDate)
@@ -291,10 +323,15 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
             const isBonus  = overflow > 0
             const baseWidth = score.possible > 0 ? Math.min(100, (netEarned / score.possible) * 100) : 0
             const overflowMax = score.possible > 0 ? Math.min(100, (overflow / score.possible) * 100) : 0
-            const heroBg = isBonus ? 'bg-accent bonus-pulse' : isPerfect ? 'bg-accent perfect-pulse' : 'bg-secondary shadow-sticker'
+            const bgClass   = (isBonus || isPerfect) ? 'bg-accent' : 'bg-secondary'
+            const animClass = scoreAnim
+              ? 'score-celebrate'
+              : isBonus   ? 'bonus-pulse'
+              : isPerfect ? 'perfect-pulse'
+              : ''
 
             return (
-              <div className={`mt-3 rounded-2xl border-[3px] border-ink p-4 transition-all ${heroBg}`}>
+              <div className={`mt-3 rounded-2xl border-[3px] border-ink p-4 shadow-sticker transition-all ${bgClass} ${animClass}`}>
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/70">
@@ -499,6 +536,33 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
           onClose={() => setShowCalendar(false)}
           getDailyScore={getDailyScore}
         />
+      )}
+
+      {milestone && createPortal(
+        <div
+          className="splash-anim fixed top-[38%] left-1/2 z-[9003] pointer-events-none flex flex-col items-center gap-2 rounded-3xl border-[3px] border-ink px-7 py-5 shadow-sticker-lg"
+          style={{
+            backgroundColor:
+              milestone === 'perfect' ? 'oklch(0.85 0.18 95)' :
+              milestone === 'bonus'   ? 'oklch(0.72 0.21 25)' :
+                                         'oklch(0.86 0.09 145)',
+          }}
+        >
+          <div className="flex items-center gap-2">
+            {milestone === 'bonus'   && <Flame  size={36} className="text-ink" strokeWidth={2.5} fill="currentColor" />}
+            {milestone === 'perfect' && <Trophy size={36} className="text-ink" strokeWidth={2.5} />}
+            {milestone === 'day-done' && <Zap   size={36} className="text-ink" strokeWidth={2.5} fill="currentColor" />}
+            <span className="font-display text-5xl font-black text-ink leading-none">
+              {milestone === 'perfect' ? 'PERFECT!' : milestone === 'bonus' ? 'BONUS!' : 'DAY DONE!'}
+            </span>
+          </div>
+          <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/70">
+            {milestone === 'perfect' ? '100% complete'
+             : milestone === 'bonus' ? 'over the top'
+             : 'all tasks finished'}
+          </span>
+        </div>,
+        document.body
       )}
     </div>
   )
