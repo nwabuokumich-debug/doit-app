@@ -109,9 +109,9 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
             <Clock3 size={12} strokeWidth={2.5} className="mt-0.5 shrink-0" aria-hidden="true" />
             <span>
               <span className="text-ink/60">Planned </span>
-              <time dateTime={task.scheduled_start}>{format(new Date(task.scheduled_start), 'h:mm a')}</time>
+              <time dateTime={task.scheduled_start}>{format(new Date(task.scheduled_start), 'HH:mm')}</time>
               {' – '}
-              <time dateTime={task.scheduled_end}>{format(new Date(task.scheduled_end), 'h:mm a')}</time>
+              <time dateTime={task.scheduled_end}>{format(new Date(task.scheduled_end), 'HH:mm')}</time>
             </span>
           </div>
         )}
