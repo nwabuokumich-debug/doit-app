@@ -7,7 +7,7 @@ import {
 import { LEVELS } from '../lib/levels'
 import { useTemplates } from '../hooks/useTemplates'
 import ScheduleFields from './ScheduleFields'
-import { scheduleFromInputs, minuteOfDay, timeValue } from '../lib/schedule'
+import { scheduleFromInputs, minuteOfDay, timeValue, defaultScheduleTimes } from '../lib/schedule'
 
 // ── Inline calendar ──────────────────────────────────────────────
 function InlineCalendar({ selected, onSelect }) {
@@ -203,9 +203,10 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
   const [due_time, setDueTime] = useState(initTime)
   const [showTime, setShowTime] = useState(isEdit && editTask.has_time_deadline)
   const [priority, setPriority] = useState(isEdit ? editTask.priority : 'normal')
+  const defaultPlan = defaultScheduleTimes()
   const [planned, setPlanned] = useState(!!editTask?.scheduled_start)
-  const [planStart, setPlanStart] = useState(editTask?.scheduled_start ? format(new Date(editTask.scheduled_start), 'HH:mm') : '09:00')
-  const [planEnd, setPlanEnd] = useState(editTask?.scheduled_end ? (minuteOfDay(editTask.scheduled_end) === 0 ? '24:00' : timeValue(minuteOfDay(editTask.scheduled_end))) : '10:00')
+  const [planStart, setPlanStart] = useState(editTask?.scheduled_start ? format(new Date(editTask.scheduled_start), 'HH:mm') : defaultPlan.start)
+  const [planEnd, setPlanEnd] = useState(editTask?.scheduled_end ? (minuteOfDay(editTask.scheduled_end) === 0 ? '24:00' : timeValue(minuteOfDay(editTask.scheduled_end))) : defaultPlan.end)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -356,7 +357,13 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
             <InlineCalendar selected={due_date} onSelect={setDueDate} />
           </div>
 
-          <ScheduleFields enabled={planned} onToggle={setPlanned} start={planStart} end={planEnd} onStart={setPlanStart} onEnd={setPlanEnd} />
+          <ScheduleFields enabled={planned} onToggle={enabled => {
+            if (enabled && !editTask?.scheduled_start) {
+              const times = defaultScheduleTimes()
+              setPlanStart(times.start); setPlanEnd(times.end)
+            }
+            setPlanned(enabled)
+          }} start={planStart} end={planEnd} onStart={setPlanStart} onEnd={setPlanEnd} />
 
           {/* Deadline toggle */}
           <div>

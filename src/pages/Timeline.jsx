@@ -3,7 +3,7 @@ import { format, isSameDay } from 'date-fns'
 import { GripVertical, ChevronsUpDown, X, Plus, Check } from 'lucide-react'
 import TaskItem from '../components/TaskItem'
 import ScheduleFields from '../components/ScheduleFields'
-import { atMinute, hasSchedule, minuteOfDay, moveInterval, layoutBlocks, scheduleFromInputs, timeValue } from '../lib/schedule'
+import { atMinute, hasSchedule, minuteOfDay, moveInterval, layoutBlocks, scheduleFromInputs, timeValue, defaultScheduleTimes } from '../lib/schedule'
 
 const HOUR_HEIGHT = 96
 const PX_PER_MINUTE = HOUR_HEIGHT / 60
@@ -11,9 +11,10 @@ const TOTAL_HEIGHT = HOUR_HEIGHT * 24
 const buttonClass = 'rounded-xl border-[3px] border-ink bg-card px-3 py-2 font-mono text-xs font-bold shadow-sticker-sm min-h-11'
 
 function TimeSheet({ task, day, locked, onClose, onUpdate, ...taskActions }) {
+  const defaultPlan = defaultScheduleTimes()
   const [enabled, setEnabled] = useState(hasSchedule(task) || !task.completed)
-  const [start, setStart] = useState(hasSchedule(task) ? timeValue(minuteOfDay(task.scheduled_start)) : '09:00')
-  const [end, setEnd] = useState(hasSchedule(task) ? (minuteOfDay(task.scheduled_end) === 0 ? '24:00' : timeValue(minuteOfDay(task.scheduled_end))) : '10:00')
+  const [start, setStart] = useState(hasSchedule(task) ? timeValue(minuteOfDay(task.scheduled_start)) : defaultPlan.start)
+  const [end, setEnd] = useState(hasSchedule(task) ? (minuteOfDay(task.scheduled_end) === 0 ? '24:00' : timeValue(minuteOfDay(task.scheduled_end))) : defaultPlan.end)
   const [actual, setActual] = useState(task.completed_at ? format(new Date(task.completed_at), 'HH:mm') : '')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -55,7 +56,13 @@ function TimeSheet({ task, day, locked, onClose, onUpdate, ...taskActions }) {
         }} {...taskActions} />
         {task.completed_at && <p className="text-xs text-ink/60 mt-3">Completed {format(new Date(task.completed_at), 'MMM d, h:mm a')}</p>}
         {!locked && <form onSubmit={save} className="mt-3 space-y-3">
-          <ScheduleFields enabled={enabled} onToggle={setEnabled} start={start} end={end} onStart={setStart} onEnd={setEnd} />
+          <ScheduleFields enabled={enabled} onToggle={value => {
+            if (value && !hasSchedule(task)) {
+              const times = defaultScheduleTimes()
+              setStart(times.start); setEnd(times.end)
+            }
+            setEnabled(value)
+          }} start={start} end={end} onStart={setStart} onEnd={setEnd} />
           <button disabled={saving} className={`${buttonClass} bg-primary w-full disabled:opacity-50`}>{saving ? 'Saving…' : enabled ? 'Save planned time' : 'Remove planned time'}</button>
         </form>}
         {!locked && task.completed && !hasSchedule(task) && <div className="mt-4 space-y-2">

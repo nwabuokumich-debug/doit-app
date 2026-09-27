@@ -22,6 +22,11 @@ export function scheduleError(start, end) {
 export function timeValue(minute) {
   return `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`
 }
+export function defaultScheduleTimes(now = new Date()) {
+  // Keep a valid same-day slot even in the last 15 minutes before midnight.
+  const start = Math.min(minuteOfDay(now), 1440 - MIN_DURATION)
+  return { start: timeValue(start), end: timeValue(Math.min(start + 60, 1440)) }
+}
 export function scheduleFromInputs(day, start, end) {
   if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(start || '') ||
       !/^(?:(?:[01]\d|2[0-3]):[0-5]\d|24:00)$/.test(end || '')) {
