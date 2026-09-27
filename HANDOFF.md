@@ -397,6 +397,7 @@ It shows:
 - Task class dot.
 - Title.
 - One-line description, if present.
+- Planned start–end time on quest cards whenever a schedule exists (Today list, All Tasks, and the Timeline task sheet).
 - Deadline label when a timed deadline exists.
 - Overdue, late, or on-time state.
 - Points badge.

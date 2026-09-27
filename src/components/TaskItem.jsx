@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react'
 import { format } from 'date-fns'
-import { Trash2, Timer, Pencil, StickyNote, Check } from 'lucide-react'
+import { Trash2, Timer, Pencil, StickyNote, Check, Clock3 } from 'lucide-react'
 import { isLate, isOnTime, earnedPoints, missedPoints } from '../hooks/useTasks'
 import { getLevel } from '../lib/levels'
+import { hasSchedule } from '../lib/schedule'
 import { emitCelebration } from '../lib/celebrate'
 import AddTaskModal from './AddTaskModal'
 import NoteModal from './NoteModal'
@@ -101,6 +102,18 @@ export default function TaskItem({ task, onComplete, onUncomplete, onDelete, onU
 
         {task.description && (
           <p className="text-xs text-ink/55 mt-1 line-clamp-1">{task.description}</p>
+        )}
+
+        {hasSchedule(task) && (
+          <div className="mt-1.5 flex items-start gap-1.5 text-xs font-bold text-ink">
+            <Clock3 size={12} strokeWidth={2.5} className="mt-0.5 shrink-0" aria-hidden="true" />
+            <span>
+              <span className="text-ink/60">Planned </span>
+              <time dateTime={task.scheduled_start}>{format(new Date(task.scheduled_start), 'h:mm a')}</time>
+              {' – '}
+              <time dateTime={task.scheduled_end}>{format(new Date(task.scheduled_end), 'h:mm a')}</time>
+            </span>
+          </div>
         )}
 
         {task.due_at && task.has_time_deadline && (
