@@ -439,9 +439,16 @@ export default function Today({ selectedDate, onDateChange, getTasksForDate, get
       {/* Timeline view */}
       {view === 'timeline' && (
         <Timeline
+          key={dateStr}
           tasks={dayTasks}
           selectedDate={selectedDate}
           onUpdate={onUpdate}
+          locked={isPast}
+          onAdd={() => setShowModal(true)}
+          onComplete={handleComplete}
+          onUncomplete={handleUncomplete}
+          onDelete={onDelete}
+          multiplier={combo ? combo.chainCount : 0}
         />
       )}
 

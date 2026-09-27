@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { format } from 'date-fns'
 import { getLevel } from '../lib/levels'
+import { scheduleError } from '../lib/schedule'
 
 const LATE_PENALTY = 2
 
@@ -77,7 +78,9 @@ export function useTasks(user) {
     return () => supabase.removeChannel(channel)
   }, [user])
 
-  const addTask = async ({ title, description, due_date, due_time, priority }) => {
+  const addTask = async ({ title, description, due_date, due_time, priority, scheduled_start = null, scheduled_end = null }) => {
+    const invalid = scheduleError(scheduled_start, scheduled_end)
+    if (invalid) return { error: { message: invalid } }
     const level = getLevel(priority)
     const hasTime = !!due_time
     const due_at = due_date
@@ -93,6 +96,8 @@ export function useTasks(user) {
       description,
       due_at,
       has_time_deadline: hasTime,
+      scheduled_start,
+      scheduled_end,
       priority,
       points: level.points,
       completed: false,
@@ -107,6 +112,8 @@ export function useTasks(user) {
       description,
       due_at,
       has_time_deadline: hasTime,
+      scheduled_start,
+      scheduled_end,
       priority,
       points: level.points,
       completed: false,
@@ -166,7 +173,14 @@ export function useTasks(user) {
     return { error }
   }
 
-  const updateTask = async (taskId, updates) => {
+  const updateTask = async (taskId, changes) => {
+    const updates = { ...changes }
+    if ('scheduled_start' in updates || 'scheduled_end' in updates) {
+      const task = tasks.find(t => t.id === taskId)
+      const merged = { ...task, ...updates }
+      const invalid = scheduleError(merged.scheduled_start, merged.scheduled_end)
+      if (invalid) return { error: { message: invalid } }
+    }
     if (updates.priority) updates.points = getLevel(updates.priority).points
     if (updates.due_date) {
       updates.due_at = new Date(`${updates.due_date}T${updates.due_time || '23:59'}:00`).toISOString()

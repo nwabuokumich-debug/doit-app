@@ -6,6 +6,8 @@ import {
 } from 'date-fns'
 import { LEVELS } from '../lib/levels'
 import { useTemplates } from '../hooks/useTemplates'
+import ScheduleFields from './ScheduleFields'
+import { scheduleFromInputs, minuteOfDay, timeValue } from '../lib/schedule'
 
 // ── Inline calendar ──────────────────────────────────────────────
 function InlineCalendar({ selected, onSelect }) {
@@ -201,6 +203,9 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
   const [due_time, setDueTime] = useState(initTime)
   const [showTime, setShowTime] = useState(isEdit && editTask.has_time_deadline)
   const [priority, setPriority] = useState(isEdit ? editTask.priority : 'normal')
+  const [planned, setPlanned] = useState(!!editTask?.scheduled_start)
+  const [planStart, setPlanStart] = useState(editTask?.scheduled_start ? format(new Date(editTask.scheduled_start), 'HH:mm') : '09:00')
+  const [planEnd, setPlanEnd] = useState(editTask?.scheduled_end ? (minuteOfDay(editTask.scheduled_end) === 0 ? '24:00' : timeValue(minuteOfDay(editTask.scheduled_end))) : '10:00')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -219,11 +224,16 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
   const handle = async (e) => {
     e.preventDefault()
     if (!title.trim()) return
-    setLoading(true)
     setError('')
+    let schedule
+    try {
+      schedule = planned ? scheduleFromInputs(due_date, planStart, planEnd) : { scheduled_start: null, scheduled_end: null }
+    } catch (error) { setError(error.message); return }
+    setLoading(true)
 
     if (isEdit) {
       const { error } = await onUpdate(editTask.id, {
+        ...schedule,
         title: title.trim(),
         description,
         due_date,
@@ -234,7 +244,7 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
       if (error) { setError(error.message); setLoading(false) }
       else onClose()
     } else {
-      const { error } = await onAdd({ title: title.trim(), description, due_date, due_time: showTime ? due_time : '', priority })
+      const { error } = await onAdd({ ...schedule, title: title.trim(), description, due_date, due_time: showTime ? due_time : '', priority })
       if (error) { setError(error.message); setLoading(false) }
       else onClose()
     }
@@ -345,6 +355,8 @@ export default function AddTaskModal({ onClose, onAdd, onUpdate, defaultDate, ed
             </label>
             <InlineCalendar selected={due_date} onSelect={setDueDate} />
           </div>
+
+          <ScheduleFields enabled={planned} onToggle={setPlanned} start={planStart} end={planEnd} onStart={setPlanStart} onEnd={setPlanEnd} />
 
           {/* Deadline toggle */}
           <div>

@@ -10,8 +10,15 @@ create table if not exists public.tasks (
   title       text not null,
   description text,
   due_at      timestamptz,
-  priority    text check (priority in ('low', 'medium', 'high')) default 'medium',
-  points      int default 3,
+  has_time_deadline boolean default false,
+  scheduled_start timestamptz,
+  scheduled_end timestamptz,
+  constraint tasks_schedule_valid check (
+    (scheduled_start is null and scheduled_end is null) or
+    (scheduled_start is not null and scheduled_end is not null and scheduled_end > scheduled_start)
+  ),
+  priority    text check (priority in ('light', 'basic', 'normal', 'solid', 'major', 'grand', 'epic')) default 'normal',
+  points      int default 4,
   bonus_points int default 0,
   completed   boolean default false,
   completed_at timestamptz,

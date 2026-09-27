@@ -1,6 +1,6 @@
 # DoIt App Handoff
 
-Last reviewed: 2026-09-27 (latest commit `a70d25a`, 2026-05-26)
+Last reviewed: 2026-09-27 (editable Timeline implementation; base commit `1fb03cd`)
 
 This document is a plain-English handoff for another ChatGPT session or developer who needs to understand this codebase without reading every file first.
 
@@ -9,10 +9,10 @@ This document is a plain-English handoff for another ChatGPT session or develope
 - **The app works.** `npm run build` passes, `npm run dev` serves the app, and the Supabase project is reachable (auth plus the `tasks`, `activities` and `activity_sessions` tables all respond).
 - **It is live.** It is deployed on Vercel and the owner uses it daily on an iPhone as a home-screen web app.
 - **Deploys happen automatically.** GitHub repo: `nwabuokumich-debug/doit-app`. Every push to `main` auto-deploys to Vercel. There is no staging environment, so anything pushed to `main` goes straight to the owner's phone.
-- **Local and GitHub are in sync.** Local `main` equals `origin/main`. The only uncommitted files are `.claude/settings.local.json` (Claude Code tool permissions, not app code) and this `HANDOFF.md`.
-- **The live database is ahead of the schema file.** The production Supabase `tasks` table has `has_time_deadline` and accepts the seven class priorities. `supabase-schema.sql` in the repo does not. See Known Issue 1.
+- **Planner upgrade:** the existing Timeline now supports planning and execution. The owner applied `migrations/20260927_task_schedule.sql` in production on 2026-09-27 and supplied a Supabase success screenshot before release.
+- **Database setup:** `supabase-schema.sql` now includes the seven task classes, `has_time_deadline`, and nullable scheduling fields. The separate additive migration upgrades an existing database without altering deadlines, scores or completion timestamps.
 - **The design changed recently.** In May 2026 the app was restyled from a dark theme to a light "sticker" design, and task completion got a large confetti/haptics celebration. See "Recent Changes" and "Styling" below. Keep new UI consistent with the sticker system.
-- **Nothing is in progress.** No work is half-finished, and there are no open branches.
+- **Release verification:** the migration is confirmed by the owner’s Supabase success screenshot. Browser checks use mocked Supabase responses; physical iPhone haptics and live end-to-end scheduling still need device verification.
 
 ## Recent Changes (2026-05-25 → 2026-05-26)
 
@@ -51,7 +51,7 @@ The app is built as a single-page React app with Supabase for authentication, da
 ## Tech Stack
 
 - Frontend: React 19 with Vite.
-- Styling: Tailwind CSS v4 using utility classes and a custom dark theme in `src/index.css`.
+- Styling: Tailwind CSS v4 using utility classes and the light sticker theme in `src/index.css`.
 - Icons: `lucide-react`.
 - Dates: `date-fns`.
 - Charts: mostly custom SVG/chart UI, with `recharts` installed but not currently used in the visible source.
@@ -108,8 +108,12 @@ Tasks represent planned actions. In the frontend, a task may have:
 - `completed_at`
 - `created_at`
 - `has_time_deadline`
+- `scheduled_start` (nullable timestamptz)
+- `scheduled_end` (nullable timestamptz)
 
-Important note: the frontend uses `has_time_deadline`, but the current `supabase-schema.sql` does not define this column. The frontend also uses priority values like `light`, `basic`, `normal`, `solid`, `major`, `grand`, and `epic`, but the SQL schema currently restricts `priority` to `low`, `medium`, and `high`. The **production** database was already migrated by hand (verified 2026-09-27: `has_time_deadline` exists). Only a **fresh** database built from the checked-in schema would break task creation.
+Scheduling is optional and separate from `due_at`, `has_time_deadline` and `completed_at`. Both scheduling fields must be null, or both must be set with end after start; the hook and database validate the pair. The UI plans within the task's selected date, with a minimum of 15 minutes and an end-at-midnight option. A 17:00–18:00 plan does not enable a deadline. Date-only tasks retain the existing end-of-day `due_at` representation, and daily membership/scoring still use `due_at`.
+
+For a fresh database use `supabase-schema.sql`. For the existing production database run `migrations/20260927_task_schedule.sql` before deploying. Existing tasks remain unscheduled. The migration is additive and repeatable. The owner confirmed successful execution in production on 2026-09-27.
 
 There is no `notes` column. Task notes (`NoteModal`) are stored in `description`.
 
@@ -257,12 +261,22 @@ Add button:
 
 - A floating plus button appears only for non-past days and only in the task-list view.
 
-Timeline behavior:
+Timeline behavior (the existing List/Timeline toggle, no new navigation mode):
 
-- The timeline shows completed tasks by their completion time.
-- It has a 24-hour vertical grid.
-- It scrolls to the current time for today, or around 8am for other days.
-- Completed task blocks can be dragged vertically to adjust `completed_at`.
+- The 24-hour grid shows incomplete scheduled tasks at their planned start/end and completed scheduled tasks in the same planned slot, with a sage completion state. Larger completed blocks subtly show actual completion time.
+- Unscheduled completed tasks still appear at their actual completion time. Their move handle edits only `completed_at`, preserving the previous feature.
+- An expandable **Unscheduled** tray contains the day's tasks without a valid schedule, including completed tasks. Tap a task to assign a time. Tray-to-grid dragging is intentionally not implemented; the quick time sheet works with touch and keyboard.
+- Tap any block to open a task/time sheet. It reuses `TaskItem`, the native iOS switch, Today completion/uncompletion callbacks, combo logic, and global celebrations. Its time inputs can assign, edit or remove a plan; unscheduled completed tasks also have a separate actual-completion editor.
+- Incomplete planned blocks have dedicated move (left) and resize (right) handles with pointer capture, 15-minute snapping, day-boundary clamping, and edge scrolling. Swiping the block body or grid scrolls normally. Pointer cancellation discards changes; tapping a handle also opens the time sheet.
+- Short blocks have a minimum visible height for touch access; labels show the exact interval. Overlapping blocks use separate lanes, with horizontal scrolling when many lanes cannot fit on a phone.
+- Past days are read-only throughout: no adding, moving, resizing, scheduling, completing or editing. Completed planned blocks preserve their plan; their timing can be edited through the sheet on unlocked days.
+- Today still scrolls near the current hour; other dates open around 8am. Day navigation resets any open sheet or drag.
+- The Timeline has an inline add button using the existing AddTaskModal. The list view and its floating add button are unchanged.
+- Save errors are shown in the Timeline or sheet, and the task hook refetches on failed updates. Scheduling fields flow through the existing optimistic updates and realtime task subscription.
+
+Supporting files: `src/lib/schedule.js` holds local-time conversion, validation, drag bounds and overlap layout; `src/components/ScheduleFields.jsx` supplies the shared planned-time controls. Timeline DOM ordering stays stable while lanes change, which is essential for keeping touch pointer capture.
+
+Validation for this upgrade: `npm run build` and all four `node --test tests/schedule.test.js` tests pass. A temporary local browser fixture at 390×844 with mocked Supabase responses passed creation, scheduling without deadlines, completion while preserving the plan, move/resize persistence, drag cancellation, failed-save feedback, reload persistence and past-day locking. Emulated touch tests passed body scrolling without writes and handle dragging across overlap changes. The fixture was removed after verification. Physical iPhone/Safari haptics and live end-to-end scheduling still need device verification. The owner subsequently confirmed that the production migration succeeded.
 
 ### All Tasks Screen
 
@@ -361,6 +375,7 @@ It includes:
 - Title input.
 - Optional notes/description.
 - Inline calendar.
+- Optional planned start/end controls, independent of the deadline; changing the selected date moves the plan to that date.
 - Optional deadline toggle.
 - Custom AM/PM time picker.
 - Task class selector.
@@ -589,11 +604,11 @@ Do not commit real `.env` values. `.env` is ignored by git. The local `.env` is 
 
 These are the most important things another ChatGPT session should know before proposing changes.
 
-Status re-verified against the code on 2026-09-27. All of these are still open.
+Status reviewed against the code on 2026-09-27. Scheduling-related setup and tests have been updated; unrelated issues remain open.
 
-1. The Supabase schema file is out of date.
+1. Scheduling migration applied in production (2026-09-27).
 
-   The frontend expects task priorities like `light`, `basic`, `normal`, `solid`, `major`, `grand`, and `epic`, plus a `has_time_deadline` column. `supabase-schema.sql` still has `low`, `medium`, `high` and no `has_time_deadline`. The production DB has already been migrated, so only the file needs updating, for reproducibility.
+   The checked-in schema now matches the task classes and scheduling fields. The owner confirmed the production migration succeeded. Other existing databases must also run `migrations/20260927_task_schedule.sql` before using this frontend.
 
 2. The Analytics "Day Streak" is always 0 (confirmed bug).
 
@@ -619,21 +634,21 @@ Status re-verified against the code on 2026-09-27. All of these are still open.
 
    They do not sync across devices.
 
-8. There are no tests in the current repo.
+8. Scheduling helper tests are available with `node --test tests/schedule.test.js`.
 
-   Important scoring logic, combo recalculation, and schema assumptions are untested.
+   They cover local-time conversion, midnight, invalid intervals, daylight-saving gaps, drag/resize bounds and overlap chains. Scoring/combo/activity test coverage is still a gap.
 
 9. `react-router-dom` and `recharts` are installed but not visibly used in the app source.
 
 10. The OneSignal app ID is hard-coded in `index.html`, and `api/notify.js` broadcasts to every subscriber.
 
-11. Uncommitted files (as of 2026-09-27): only `.claude/settings.local.json` (Claude Code permissions, not app code) and this `HANDOFF.md`. All app code is committed and deployed.
+11. The planner release uses the existing push-to-main Vercel deployment flow. `.claude/settings.local.json` contains unrelated local changes and must stay out of any planner commit.
 
 ## Good Next-Step Ideas
 
 High-value next steps:
 
-- Update `supabase-schema.sql` so it matches the frontend fields and current level system.
+- Verify the released planner on the owner’s iPhone, including live persistence and haptics.
 - Fix the Analytics streak calculation.
 - Make Profile stats use the same scoring helpers as the Today screen.
 - Add tests for:
