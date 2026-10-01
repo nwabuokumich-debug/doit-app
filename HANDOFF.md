@@ -1,6 +1,6 @@
 # DoIt App Handoff
 
-Last reviewed: 2026-09-27 (editable Timeline implementation; base commit `1fb03cd`)
+Last reviewed: 2026-10-01 (latest commit `d0aba5f`, 2026-09-27)
 
 This document is a plain-English handoff for another ChatGPT session or developer who needs to understand this codebase without reading every file first.
 
@@ -12,14 +12,21 @@ This document is a plain-English handoff for another ChatGPT session or develope
 - **Planner upgrade:** the existing Timeline now supports planning and execution. The owner applied `migrations/20260927_task_schedule.sql` in production on 2026-09-27 and supplied a Supabase success screenshot before release.
 - **Database setup:** `supabase-schema.sql` now includes the seven task classes, `has_time_deadline`, and nullable scheduling fields. The separate additive migration upgrades an existing database without altering deadlines, scores or completion timestamps.
 - **The design changed recently.** In May 2026 the app was restyled from a dark theme to a light "sticker" design, and task completion got a large confetti/haptics celebration. See "Recent Changes" and "Styling" below. Keep new UI consistent with the sticker system.
+- **Verified 2026-10-01:** `npm run build` passes, `node --test tests/schedule.test.js` passes 4/4, and the live `tasks` table exposes `scheduled_start`/`scheduled_end`. Local `main` equals `origin/main`; the only uncommitted file is `.claude/settings.local.json` (Claude Code permissions, not app code; never commit it).
+- **Owner preference, time format:** the owner wants the **24-hour clock** (e.g. `17:00`, not `5:00 PM`). Planned times already use `HH:mm`. Some displays still use 12-hour; see Known Issue 12.
 - **Release verification:** the migration is confirmed by the owner’s Supabase success screenshot. Browser checks use mocked Supabase responses; physical iPhone haptics and live end-to-end scheduling still need device verification.
 
-## Recent Changes (2026-05-25 → 2026-05-26)
+## Recent Changes (2026-05-25 → 2026-09-27)
 
 Newest first:
 
 | Commit | What changed |
 | --- | --- |
+| `d0aba5f` | Planned time ranges on task cards now use the 24-hour format `HH:mm` ("Planned 17:00 – 18:00"), at the owner's request. Only lines ~112/114 of `TaskItem.jsx` changed. |
+| `612ca95` | Task ("quest") cards show "Planned start – end" under the task details whenever a schedule exists: on the Today list, All Tasks, and the Timeline task sheet. |
+| `18be57d` | New planned times default to the current local time, ending one hour later (capped at midnight; 23:45 start in the last 15 minutes of the day). |
+| `7326913` | **Editable daily planner.** The existing Timeline became a planner: new nullable `scheduled_start`/`scheduled_end` columns, `migrations/20260927_task_schedule.sql` (applied in production by the owner), `src/lib/schedule.js`, `src/components/ScheduleFields.jsx`, drag/resize handles, an Unscheduled tray, and `tests/schedule.test.js`. `supabase-schema.sql` was also brought up to date (seven classes plus `has_time_deadline`). Full details are under "Today Screen → Timeline behavior". |
+| `1fb03cd` | This handoff document added. |
 | `a70d25a` | The task completion control is now a real `<input type="checkbox" switch>` (in `TaskItem.jsx`). On iOS 18+ Safari, tapping a native switch fires the Taptic Engine, which is the only way to get haptics on iPhone web (`navigator.vibrate` does nothing on iOS). The `switch` attribute is spread as `{...{ switch: '' }}` so React passes it through. The input is `appearance-none` and styled as a sticker box, with a `Check` icon overlaid using `pointer-events-none`. **Do not replace this with a `<button>`, or iPhone haptics will stop working.** |
 | `a82b638` | The celebration moved out of `TaskItem` into a global `CelebrationRoot` (`src/components/CelebrationRoot.jsx`, mounted in `App.jsx`). `TaskItem` now calls `emitCelebration(payload)` from `src/lib/celebrate.js`, a tiny pub/sub. Reason: on Today, completing a task moves it from the pending list to the completed list, which unmounted `TaskItem` mid-animation and cut the confetti off. |
 | `e50c035` | Much bigger completion feedback. Confetti is portaled to `document.body` and scales with task points (16/28/44 pieces). Combo escalation: ×3+ adds a mustard screen-edge flash, ×5+ adds a second confetti wave, ×10+ shows a giant "×N COMBO!" splash. The Today score card pops. Milestone splashes appear on Today: PERFECT (100%), BONUS (over 100%) and DAY DONE (last task). Android also gets `navigator.vibrate` patterns. |
@@ -378,7 +385,7 @@ It includes:
 - Inline calendar.
 - Optional planned start/end controls, independent of the deadline; changing the selected date moves the plan to that date.
 - Optional deadline toggle.
-- Custom AM/PM time picker.
+- Deadline time picker (still AM/PM style; the owner prefers 24-hour, see Known Issue 12).
 - Task class selector.
 - Save-as-template button.
 - Template chips when adding a task.
@@ -644,13 +651,18 @@ Status reviewed against the code on 2026-09-27. Scheduling-related setup and tes
 
 10. The OneSignal app ID is hard-coded in `index.html`, and `api/notify.js` broadcasts to every subscriber.
 
-11. The planner release uses the existing push-to-main Vercel deployment flow. `.claude/settings.local.json` contains unrelated local changes and must stay out of any planner commit.
+11. The planner release uses the existing push-to-main Vercel deployment flow. `.claude/settings.local.json` contains unrelated local changes and must stay out of every commit.
+
+12. Some time displays are still 12-hour, but the owner prefers 24-hour.
+
+   Still `h:mm a`: the deadline label in `TaskItem.jsx` (~line 128), "Completed …" in the Timeline sheet (`Timeline.jsx` ~57), "Done …" on Timeline blocks (`Timeline.jsx` ~195), and the AddTaskModal deadline picker. As of 2026-10-01 the owner has been offered a switch to `HH:mm` for these but hasn't confirmed it. Native `<input type="time">` fields follow the phone's own clock setting.
 
 ## Good Next-Step Ideas
 
 High-value next steps:
 
 - Verify the released planner on the owner’s iPhone, including live persistence and haptics.
+- If the owner confirms, switch the remaining 12-hour displays to `HH:mm` (Known Issue 12).
 - Fix the Analytics streak calculation.
 - Make Profile stats use the same scoring helpers as the Today screen.
 - Add tests for:
